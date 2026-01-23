@@ -16,7 +16,7 @@ ziptrain = read.table("zip.train.csv", sep= ",")
 
 ```{r}
 ziptrain27 = subset(ziptrain, ziptrain[,1]==2 | ziptrain[,1]==7)
-#ziptrain27
+ziptrain27
 ```
 
 ```{r}
@@ -24,12 +24,23 @@ dim(ziptrain)
 dim(ziptrain27)
 sum(ziptrain27[,1]==2)
 summary(ziptrain27)
-round(cor(ziptrain27), 2)
 ```
 
 ```{r}
 round(cor(ziptrain27), 2)
 ```
+
+```{r}
+# check correlation plot
+library(corrplot)
+```
+
+```{r}
+corrplot(round(cor(ziptrain27), 2))
+
+```
+
+
 
 ```{r}
 rowindex=5
@@ -48,23 +59,37 @@ image(Xval, col=gray(0:1), axes=FALSE)
 mod1=lm(V1~., data = ziptrain27)
 pred1.train=predict.lm(mod1, ziptrain27[, -1])
 y1pred.train = 2+5*(pred1.train >=4.5)
-```
-
-
-```{r}
 mean(y1pred.train != ziptrain27[,1])
 ```
+
 
 ```{r}
 library(class)
 ```
 
 ```{r}
-kk=1
-xnew =  ziptrain27[,-1]
-ypred2.train = knn(ziptrain27[, -1], xnew, ziptrain27[,1], k=kk)
-mean(ypred2.train!=ziptrain27[,1])
+#kk=3
+#xnew =  ziptrain27[,-1]
+#ypred2.train = knn(ziptrain27[, -1], xnew, ziptrain27[,1], k=kk)
+#mean(ypred2.train!=ziptrain27[,1])
 ```
+
+```{r}
+k = c(1, 3, 5, 7, 9, 11, 13, 15)
+k
+```
+
+```{r}
+for (i in k){
+  kk=i
+  xnew =  ziptrain27[,-1]
+  ypred2.train= knn(ziptrain27[, -1], xnew, ziptrain27[,1], k=kk)
+  print (mean(ypred2.train!=ziptrain27[,1]))
+}
+```
+
+
+
 
 ```{r}
 ziptest =read.table("zip.test.csv", sep=",")
@@ -78,6 +103,18 @@ kk=1
 ypred2.test = knn(ziptrain27[,-1], xnew2, ziptrain27[,1], k=kk)
 mean(ypred2.test!=ziptest27[, 1])
 ```
+
+```{r}
+t = c(1, 3, 5, 7, 9, 11, 13, 15)
+t
+for (j in t){
+  kk=j
+  xnew2 = ziptest27[,-1]
+  ypred2.test = knn(ziptrain27[,-1], xnew2, ziptrain27[,1], k=kk)
+  print(mean(ypred2.test!=ziptest27[, 1]))
+}
+```
+
 
 ```{r}
 zip27full = rbind(ziptrain27, ziptest27)
@@ -98,20 +135,78 @@ TEALL=NULL
 ```
 
 ```{r}
-for (b in 1:100){
-  flag = sort(sample(1:n,n1))
+newk = c(1,3,5,7,9,11,13,15)
+te1 = 0
+for (b in 1:2){
+  flag = sort(sample(1:30,15))
   zip27traintemp = zip27full[flag, ]
   zip27testtemp = zip27full[-flag, ]
   
-  #
-  #
+  # linear model
+  linearmodel=lm(V1~., data = zip27traintemp)
+  pred1.linearmodel=predict.lm(linearmodel, zip27testtemp[, -1])
+  y1pred.linearmodel = 2+5*(pred1.linearmodel >=4.5)
+  te0 = mean(y1pred.linearmodel != zip27traintemp[,1])
+  
+  
+  # KNN model
+  kk=1
+  xnew1 =  zip27testtemp[,-1]
+  ypred2.train.cv1 = knn(zip27traintemp[, -1], xnew1, zip27traintemp[,1], k=kk)
+  te1[b] = mean(ypred2.train.cv1!=zip27traintemp[,1])
+  te1 = sapply(te1[b], mean)
+  
+  kk=3
+  xnew3 =  zip27testtemp[,-1]
+  ypred2.train.cv3 = knn(zip27traintemp[, -1], xnew3, zip27traintemp[,1], k=kk)
+  te2[b] = mean(ypred2.train.cv3!=zip27traintemp[,1])
+  te2 = sapply(te2[b], mean)
+  
+  kk=5
+  xnew5 =  zip27testtemp[,-1]
+  ypred2.train.cv5 = knn(zip27traintemp[, -1], xnew5, zip27traintemp[,1], k=kk)
+  te3[b] = mean(ypred2.train.cv5!=zip27traintemp[,1])
+  te3 = sapply(te3[b], mean)
+  
+  kk=7
+  xnew7 =  zip27testtemp[,-1]
+  ypred2.train.cv7 = knn(zip27traintemp[, -1], xnew7, zip27traintemp[,1], k=kk)
+  te4[b] = mean(ypred2.train.cv7!=zip27traintemp[,1])
+  te4=sapply(te4[b], mean)
+  
+  kk=9
+  xnew9 =  zip27testtemp[,-1]
+  ypred2.train.cv9 = knn(zip27traintemp[, -1], xnew9, zip27traintemp[,1], k=kk)
+  te5[b] = mean(ypred2.train.cv9!=zip27traintemp[,1])
+  te5=sapply(te5[b], mean)
+  
+  kk=11
+  xnew11 =  zip27testtemp[,-1]
+  ypred2.train.cv11 = knn(zip27traintemp[, -1], xnew11, zip27traintemp[,1], k=kk)
+  te6[b] = mean(ypred2.train.cv11!=zip27traintemp[,1])
+  te6=sapply(te6[b], mean)
+  
+  kk=13
+  xnew13 =  zip27testtemp[,-1]
+  ypred2.train.cv13 = knn(zip27traintemp[, -1], xnew13, zip27traintemp[,1], k=kk)
+  te7[b] = mean(ypred2.train.cv13!=zip27traintemp[,1])
+  te7=sapply(te7[b], mean)
+  
+  kk=15
+  xnew15 =  zip27testtemp[,-1]
+  ypred2.train.cv15 = knn(zip27traintemp[, -1], xnew15, zip27traintemp[,1], k=kk)
+  te8[b] = mean(ypred2.train.cv15!=zip27traintemp[,1])
+  te8=sapply(te8[b], mean)
+  
   TEALL = rbind(TEALL, cbind(te0, te1, te2, te3, te4, te5, te6, te7, te8))
 }
 ```
 
+
+
 ```{r}
 dim(TEALL)
-colnames(TEALL) = C("linearRegression","KNN1", "KNN3", "KNN5", "KNN7","KNN9", "KNN11", "KNN13", "KNN15")
+#colnames(TEALL) = C("linearRegression","KNN1", "KNN3", "KNN5", "KNN7","KNN9", "KNN11", "KNN13", "KNN15")
 ```
 
 ```{r}

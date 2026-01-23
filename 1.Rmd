@@ -1,0 +1,127 @@
+---
+title: "HW1"
+author: "Bo"
+date: "2026-01-23"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+ziptrain = read.table("zip.train.csv", sep= ",")
+#ziptrain
+```
+
+```{r}
+ziptrain27 = subset(ziptrain, ziptrain[,1]==2 | ziptrain[,1]==7)
+#ziptrain27
+```
+
+```{r}
+dim(ziptrain)
+dim(ziptrain27)
+sum(ziptrain27[,1]==2)
+summary(ziptrain27)
+round(cor(ziptrain27), 2)
+```
+
+```{r}
+round(cor(ziptrain27), 2)
+```
+
+```{r}
+rowindex=5
+ziptrain27[rowindex, 1]
+Xval = t(matrix(data.matrix(ziptrain27[,1])[rowindex, ], byrow=TRUE, 16, 16)[16:1, ])
+Xval
+```
+
+```{r}
+image(Xval, col=gray(0:1), axes=FALSE)
+# col=gray(0:32/32) gives different color. 
+#image(Xval, col=gray(0:32/32), axes=FALSE)
+```
+
+```{r}
+mod1=lm(V1~., data = ziptrain27)
+pred1.train=predict.lm(mod1, ziptrain27[, -1])
+y1pred.train = 2+5*(pred1.train >=4.5)
+```
+
+
+```{r}
+mean(y1pred.train != ziptrain27[,1])
+```
+
+```{r}
+library(class)
+```
+
+```{r}
+kk=1
+xnew =  ziptrain27[,-1]
+ypred2.train = knn(ziptrain27[, -1], xnew, ziptrain27[,1], k=kk)
+mean(ypred2.train!=ziptrain27[,1])
+```
+
+```{r}
+ziptest =read.table("zip.test.csv", sep=",")
+ziptest27 = subset(ziptest, ziptest[, 1]==2|ziptest[,1]==7)
+dim(ziptest27)
+```
+
+```{r}
+xnew2 = ziptest27[,-1]
+kk=1
+ypred2.test = knn(ziptrain27[,-1], xnew2, ziptrain27[,1], k=kk)
+mean(ypred2.test!=ziptest27[, 1])
+```
+
+```{r}
+zip27full = rbind(ziptrain27, ziptest27)
+n1=1376
+n2=345
+n=dim(zip27full)[1]
+```
+
+
+```{r}
+set.seed(7406)
+```
+
+
+```{r}
+B=100
+TEALL=NULL
+```
+
+```{r}
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

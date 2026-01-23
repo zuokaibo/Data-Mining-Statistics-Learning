@@ -2,7 +2,9 @@
 title: "HW1"
 author: "Bo"
 date: "2026-01-23"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -137,6 +139,14 @@ TEALL=NULL
 ```{r}
 newk = c(1,3,5,7,9,11,13,15)
 te1 = 0
+te2 =0
+te3=0
+te4=0
+te5=0
+te6=0
+te7=0
+te8=0
+te0=0
 for (b in 1:2){
   flag = sort(sample(1:30,15))
   zip27traintemp = zip27full[flag, ]

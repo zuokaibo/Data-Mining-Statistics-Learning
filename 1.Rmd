@@ -98,10 +98,26 @@ TEALL=NULL
 ```
 
 ```{r}
-for 
+for (b in 1:100){
+  flag = sort(sample(1:n,n1))
+  zip27traintemp = zip27full[flag, ]
+  zip27testtemp = zip27full[-flag, ]
+  
+  #
+  #
+  TEALL = rbind(TEALL, cbind(te0, te1, te2, te3, te4, te5, te6, te7, te8))
+}
 ```
 
+```{r}
+dim(TEALL)
+colnames(TEALL) = C("linearRegression","KNN1", "KNN3", "KNN5", "KNN7","KNN9", "KNN11", "KNN13", "KNN15")
+```
 
+```{r}
+apply(TEALL, 2, mean)
+apply(TEALL, 2, var)
+```
 
 
 

@@ -18,18 +18,18 @@ ziptrain = read.table("zip.train.csv", sep= ",")
 
 ```{r}
 ziptrain27 = subset(ziptrain, ziptrain[,1]==2 | ziptrain[,1]==7)
-ziptrain27
+#ziptrain27
 ```
 
 ```{r}
 dim(ziptrain)
 dim(ziptrain27)
 sum(ziptrain27[,1]==2)
-summary(ziptrain27)
+#summary(ziptrain27)
 ```
 
 ```{r}
-round(cor(ziptrain27), 2)
+#round(cor(ziptrain27), 2)
 ```
 
 ```{r}
@@ -86,7 +86,7 @@ for (i in k){
   kk=i
   xnew =  ziptrain27[,-1]
   ypred2.train= knn(ziptrain27[, -1], xnew, ziptrain27[,1], k=kk)
-  print (mean(ypred2.train!=ziptrain27[,1]))
+  #print (mean(ypred2.train!=ziptrain27[,1]))
 }
 ```
 
@@ -113,7 +113,7 @@ for (j in t){
   kk=j
   xnew2 = ziptest27[,-1]
   ypred2.test = knn(ziptrain27[,-1], xnew2, ziptrain27[,1], k=kk)
-  print(mean(ypred2.test!=ziptest27[, 1]))
+  #print(mean(ypred2.test!=ziptest27[, 1]))
 }
 ```
 

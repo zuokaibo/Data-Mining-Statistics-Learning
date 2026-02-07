@@ -63,28 +63,86 @@ standardize = function(x){
 ```
 
 ```{r}
-fat1train = apply(fattrain, 2, standardize)
+fat1train = as.data.frame(apply(fattrain, 2, standardize))
+head(fat1train)
 ```
 
 ```{r}
-fat1test = apply(fattest, 2, standardize)
+fat1test = as.data.frame(apply(fattest, 2, standardize))
+
 ```
 
 ```{r}
 boxplot(fat1train, main="Box plot of each normalized variables")
 ```
 
-```{r}
 
+```{r}
+#(c)
+#(i) Linear regression model with all predictors
+linear =  lm(brozek~., data=fat1train)
+summary(linear)
+```
+
+```{r}
+#(ii)
+LinearFive = lm(brozek~siri+density+weight+free+thigh, data=fat1train)
+summary(LinearFive)
+```
+
+```{r}
+#(iii)
+aiclinear = lm(brozek~., data=fat1train)
+AIClinear=step(aiclinear, direction="both")
+summary(AIClinear)
+```
+
+```{r}
+#(iv)
+library(glmnet)
+```
+```{r}
+# model.matrix() requires x and y input, not a built model. brozek~.means brozek is dependent variable, all else are independent variables.
+x = model.matrix(brozek~.,  data=fat1train)
+y=fat1train$brozek
+```
+
+```{r}
+# set alpha = 0 is ridge, 1 is lasso
+linear.ridge = glmnet(x, y, alpha = 0)
+plot(linear.ridge, xvar="lambda", label=TRUE)
+cv.ridge = cv.glmnet(x, y, alpha=0)
+plot(cv.ridge)
+coef(cv.ridge)
 ```
 
 
+```{r}
+#(v)lasso
+fit.lasso = glmnet(x, y, alpha=1)
+plot(fit.lasso, xvar="lambda", label=TRUE)
+cv.lasso = cv.glmnet(x,y)
+plot(cv.lasso)
+coef(cv.lasso)
+```
 
+```{r}
+library(pls)
+```
 
+```{r}
+#(vi)PCR
+pcr.model=pcr(brozek~., data=fat1train, validation="CV")
+summary(pcr.model)
+```
 
-
-
-
+```{r}
+#(vii)PLS
+pls.model=plsr(brozek~.,data=fat1train, validation="CV")
+summary(pls.model)
+validationplot(pls.model, val.type="MSEP")
+validationplot(pls.model, val.type="R2")
+```
 
 
 

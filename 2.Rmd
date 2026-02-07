@@ -1,0 +1,74 @@
+---
+title: "HW2"
+author: "Bo"
+date: "2026-02-06"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r cars}
+fat = read.csv("fat.csv")
+head(fat)
+```
+```{r}
+str(fat)
+```
+
+
+```{r pressure, echo=FALSE}
+summary(fat)
+```
+
+
+```{r}
+library(psych)
+```
+
+```{r}
+psych::pairs.panels(fat)
+```
+
+```{r}
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

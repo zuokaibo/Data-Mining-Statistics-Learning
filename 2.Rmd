@@ -33,17 +33,50 @@ psych::pairs.panels(fat)
 ```
 
 ```{r}
-
+#(a)
+n = dim(fat)[1]
+n1 = round(n/10)
+flag = c(1,21,22,57,70,88,91,94,121,127,149,151,159,162,164,177,179,194,206,214,215,221,240,241,243)
+fattrain=fat[-flag, ]
+fattest = fat[flag, ]
+dim(fattrain)
+dim(fattest)
 ```
 
 
+```{r}
+#(b)
+summary(fattrain)
+```
 
 
+```{r}
+boxplot(fattrain, main="Box plots for all variables")
+```
 
+```{r}
+# since the unit of each column is different, they need a normalization.
+standardize = function(x){
+  z = (x-min(x))/(max(x) - min(x))
+  return (z)
+}
+```
 
+```{r}
+fat1train = apply(fattrain, 2, standardize)
+```
 
+```{r}
+fat1test = apply(fattest, 2, standardize)
+```
 
+```{r}
+boxplot(fat1train, main="Box plot of each normalized variables")
+```
 
+```{r}
+
+```
 
 
 

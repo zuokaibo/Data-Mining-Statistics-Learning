@@ -213,93 +213,129 @@ te.pls = mean(sum((fat1test$brozek - pls.predict)^2))
 te.pls
 ```
 
+```{r}
+tealltrain = NULL
+tealltrain = rbind(teall, cbind(te.linear,te.linearfive, te.aic, te.ridge, te.lasso, te.pcr, te.pls))
+tealltrain
+```
+
+```{r}
+set.seed(7406)
+```
+
+```{r}
+flag = sort(sample(1:n, n1))
+fattrain = as.data.frame(fat[-flag, ])
+fattest = as.data.frame(fat[flag, ])
+dim(fattest)
+  
+  #linear
+linear.mod = lm(brozek~., data=fattrain)
+linear.predict = as.data.frame(predict(linear.mod, newdata=fattest))
+dim(linear.predict)
+linear.te = mean(sum((linear.predict - fattest$brozek)^2))
+linear.te
+
+```
+
+```{r}
+#TEALL = NULL
+#B = 100
+
+#for (b in 1:B) {
+#  flag = sort(sample(1:n, n1))
+#  fattrain = as.data.frame(fat[-flag, ])
+#  fattest = as.data.frame(fat[flag, ])
+  
+#  fattest = as.data.frame(apply(fattest, 2, standardize))
+#  fattrain = as.data.frame(apply(fattrain, 2, standardize))
+  
+  #linear aic
+#  linear.aic = lm(brozek~., data=fattrain)
+#  linear.aic.mod = step(linear.aic, direction="both")
+#  linear.aic.predict = as.data.frame(predict(linear.aic.mod, newdata=fattest))
+#}
+#summary(linear.aic.mod)
+```
+
+
+```{r}
+# reference from HW1
+TEALL = NULL
+B = 100
+
+for (b in 1:B) {
+  flag = sort(sample(1:n, n1))
+  fattrain = as.data.frame(fat[-flag, ])
+  fattest = as.data.frame(fat[flag, ])
+  
+  fattest = as.data.frame(apply(fattest, 2, standardize))
+  fattrain = as.data.frame(apply(fattrain, 2, standardize))
+  
+  
+  
+  #linear
+  linear.mod = lm(brozek~., data=fattrain)
+  linear.predict = as.data.frame(predict(linear.mod, newdata=fattest))
+  linear.te = mean(sum((linear.predict - fattest$brozek)^2))
+  
+  #linear with chosen 5 predictiors
+  linear.five.mod = lm(brozek~siri+density+weight+free+thigh, data=fattrain)
+  linear.five.predict = as.data.frame(predict(linear.five.mod, newdata=fattest))
+  linear.five.te = mean(sum((linear.predict - fattest$brozek)^2))
+  
+  #linear model with lowest aic value obtained from chunk above.(since aic selection takes too many pages to be printed out, so i did a seperate chunk with 100 loops to find best model with lowest aic value, and directly use that best model here.)
+  linear.aic.mod = lm(brozek ~ siri + weight + height + adipos + free + thigh + knee + biceps + forearm + wrist,                       data = fattrain)
+  linear.aic.predict = as.data.frame(predict(linear.aic.mod, newdata=fattest))
+  aic.te = mean(sum((fattest$brozek - linear.aic.predict)^2))
+  
+  #set up x and y for ridge and lasso regression in glmnet function.
+  x.train = model.matrix(brozek~.,  data=fattrain)
+  y.train = fattrain$brozek
+  x.test = model.matrix(brozek~.,  data=fattest)
+  y.test = fattest$brozek
+  
+  #ridge regression
+  ridge.mod = cv.glmnet(x.train, y.train, alpha=0)
+  ridge.predict = as.data.frame(predict(ridge.mod, s=ridge.mod$lambda.1se, newx=x.test))
+  ridge.te = mean(sum((fattest$brozek - ridge.predict)^2))
+  
+  #lasso regression
+  lasso.mod = cv.glmnet(x.train, y.train, alpha=1)
+  lasso.predict = as.data.frame(predict(lasso.mod, s=lasso.mod$lambda.1se, newx=x.test))
+  lasso.te = mean(sum((fattest$brozek - lasso.predict)^2))
+  
+  # pcr regression
+  pcr.mod=pcr(brozek~., data=fattrain, validation="CV")
+  pcr.predict = as.data.frame(predict(pcr.mod, newdata=fattest, ncomp = 4))
+  pcr.te = mean(sum((fattest$brozek - pcr.predict)^2))
+  #validationplot(pcr.mod, val.type = "R2")
+  
+  #pls regression
+  pls.mod=plsr(brozek~.,data=fattrain, validation="CV")
+  pls.predict = as.data.frame(predict(pls.mod, newdata=fattest, ncomp = 3))
+  #validationplot(pls.mod, val.type = "R2")
+  pls.te = mean(sum((fattest$brozek - pls.predict)^2))
+  
+  TEALL = rbind(TEALL, cbind(linear.te, linear.five.te, aic.te, ridge.te, lasso.te, pcr.te, pls.te))
+}
 
+```
 
 
+```{r}
+#print(TEALL)
+```
 
 
+```{r}
+apply(TEALL, 2, mean)
+```
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+```{r}
+apply(TEALL, 2, var)
+```
 
 
 

@@ -63,7 +63,7 @@ standardize = function(x){
 
 ```{r}
 fat1train = as.data.frame(apply(fattrain, 2, standardize))
-head(fat1train)
+summary(fat1train)
 ```
 
 ```{r}

@@ -215,7 +215,7 @@ te.pls
 
 ```{r}
 tealltrain = NULL
-tealltrain = rbind(teall, cbind(te.linear,te.linearfive, te.aic, te.ridge, te.lasso, te.pcr, te.pls))
+tealltrain = rbind(tealltrain, cbind(te.linear,te.linearfive, te.aic, te.ridge, te.lasso, te.pcr, te.pls))
 tealltrain
 ```
 

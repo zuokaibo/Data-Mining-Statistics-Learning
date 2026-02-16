@@ -58,10 +58,22 @@ hist(data$mpg01)
 
 
 ```{r}
-
+# split dataset using caTools pacakge, 
+library(caTools)
 ```
 
 
+```{r}
+split = sample.split(data$mpg, SplitRatio = 0.8)
+traindata = subset(data, split == TRUE)
+testdata = subset(data, split == FALSE)
+
+#nrow(traindata)
+#nrow(testdata)
+
+#head(traindata)
+#head(testdata)
+```
 
 
 

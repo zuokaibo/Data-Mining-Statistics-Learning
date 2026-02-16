@@ -1,0 +1,67 @@
+---
+title: "HW3"
+author: "Bo"
+date: "2026-02-16"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r cars}
+data = read.csv("Auto.csv")
+#head(data)
+str(data)
+```
+
+
+```{r pressure, echo=FALSE}
+median(data$mpg)
+# make a indicator that value bigger than 22.75 and smaller than 22.75
+# then use as.integer to transform False  True value obtained from flag to 0 and 1.
+flag=I(data$mpg>=22.75)
+mpg01 = as.integer(flag)
+#mpg01
+```
+
+
+```{r}
+data = cbind(mpg01, data) 
+
+```
+
+
+```{r}
+par(mfrow = c(1,2))
+plot(data$displacement, data$mpg)
+plot(data$horsepower, data$mpg)
+
+par(mfrow = c(1,2))
+plot(data$weight, data$mpg)
+plot(data$acceleration, data$mpg)
+```
+
+```{r}
+par(mfrow=c(2,2))
+hist(data$displacement)
+hist(data$horsepower)
+hist(data$weight)
+hist(data$acceleration)
+
+par(mfrow=c(1,2))
+hist(data$mpg)
+hist(data$mpg01)
+```
+
+
+```{r}
+
+```
+
+
+
+
+

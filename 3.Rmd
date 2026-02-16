@@ -23,14 +23,14 @@ median(data$mpg)
 # make a indicator that value bigger than 22.75 and smaller than 22.75
 # then use as.integer to transform False  True value obtained from flag to 0 and 1.
 flag=I(data$mpg>=22.75)
-mpg01 = as.integer(flag)
+mpg01 = as.numeric(flag)
 #mpg01
 ```
 
 
 ```{r}
-data = cbind(mpg01, data) 
-
+newdata = cbind(mpg01, data) 
+ncol(newdata)
 ```
 
 
@@ -53,7 +53,16 @@ hist(data$acceleration)
 
 par(mfrow=c(1,2))
 hist(data$mpg)
-hist(data$mpg01)
+hist(newdata$mpg01)
+```
+
+
+```{r}
+library(corrplot)
+```
+
+```{r}
+corrplot(round(cor(data) ,2))
 ```
 
 

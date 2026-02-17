@@ -67,6 +67,10 @@ corrplot(round(cor(data) ,2))
 
 
 ```{r}
+pairs(data[, 3:6])
+```
+
+```{r}
 # split dataset using caTools pacakge, 
 library(caTools)
 ```

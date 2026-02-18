@@ -13,8 +13,8 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r cars}
 data = read.csv("Auto.csv")
-#head(data)
-str(data)
+head(data)
+#str(data)
 ```
 
 
@@ -29,8 +29,9 @@ mpg01 = as.numeric(flag)
 
 
 ```{r}
-newdata = cbind(mpg01, data) 
+newdata = cbind(mpg01, data[,2:8]) 
 ncol(newdata)
+head(newdata)
 ```
 
 
@@ -77,9 +78,9 @@ library(caTools)
 
 
 ```{r}
-split = sample.split(data$mpg, SplitRatio = 0.8)
-traindata = subset(data, split == TRUE)
-testdata = subset(data, split == FALSE)
+split = sample.split(newdata$mpg01, SplitRatio = 0.8)
+traindata = subset(newdata, split == TRUE)
+testdata = subset(newdata, split == FALSE)
 
 #nrow(traindata)
 #nrow(testdata)
@@ -87,6 +88,54 @@ testdata = subset(data, split == FALSE)
 #head(traindata)
 #head(testdata)
 ```
+
+
+```{r}
+# LDA 
+library(MASS)
+library(caret)
+
+```
+
+
+
+```{r}
+lda.full.model = lda(mpg01~., traindata)
+lda.full.model
+plot(lda.full.model, dimen=1, type="b")
+```
+
+```{r}
+lda.full.pred = predict(lda.full.model, newdata=testdata)
+#lda.full.pred$class
+#testdata$mpg01
+lda.matrix = confusionMatrix(data=as.factor(lda.full.pred$class), reference = as.factor(testdata$mpg01))
+lda.matrix
+```
+
+```{r}
+# QDA
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -98,6 +98,11 @@ library(caret)
 ```
 
 
+```{r}
+# check equal covirance between classes to check if LDA fits 
+library(heplots)
+```
+
 
 ```{r}
 lda.full.model = lda(mpg01~., traindata)
@@ -115,15 +120,41 @@ lda.matrix
 
 ```{r}
 # QDA
+qda.model = qda(mpg01~., data=newdata)
+qda.model
+```
 
+```{r}
+qda.pred = predict(qda.model, newdata=testdata)
+#qda.pred
+qda.matrix = confusionMatrix(data=as.factor(qda.pred$class), reference = as.factor(testdata$mpg01))
+qda.matrix
+```
+
+
+```{r}
+#check partition plot using LDA and QDA.
+library(klaR)
+```
+
+
+```{r}
+colnames(newdata)
 ```
 
 
 
+```{r}
+lda.partition = partimat(as.factor(mpg01)~cylinders+displacement+horsepower+weight+acceleration, testdata, method = "lda")
+
+qda.partition = partimat(as.factor(mpg01)~cylinders+displacement+horsepower+weight+acceleration, testdata, method = "qda")
+```
 
 
+```{r}
+# Bayes Naive
 
-
+```
 
 
 

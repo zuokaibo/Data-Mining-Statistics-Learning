@@ -78,7 +78,7 @@ hist(data$acceleration)
 
 par(mfrow=c(1,2))
 hist(data$mpg)
-hist(newdata$mpg01)
+hist(mpg01)
 ```
 
 
@@ -243,6 +243,12 @@ auc(logistic.roc)
 ```
 
 
+```{r}
+#knn
+
+
+
+```
 
 
 

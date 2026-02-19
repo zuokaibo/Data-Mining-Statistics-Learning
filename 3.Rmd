@@ -21,6 +21,8 @@ library(caTools)
 library(MASS)
 
 # creating confusion matrix
+library(rlang)
+library(ggplot2)
 library(caret)
 
 # check equal covirance between classes 
@@ -31,8 +33,14 @@ library(klaR)
 
 # Naive Bayes
 library(e1071)
-```
 
+#logistic model
+library(dplyr)
+
+# apply ROC curve
+library(pROC) 
+
+```
 
 
 ```{r cars}
@@ -101,10 +109,10 @@ standardize=function(x){
 
 stand.newdata = as.data.frame(apply(newdata[, 3:6],2,standardize))
 newdata = cbind(newdata[, 1:2], stand.newdata, newdata[, 7:8])
-#newdata$mpg01 = as.factor(newdata$mpg01)
-#newdata$cylinders = as.factor(newdata$cylinders)
-#newdata$year = as.factor(newdata$year)
-#newdata$origin = as.factor(newdata$origin)
+newdata$mpg01 = as.factor(newdata$mpg01)
+newdata$cylinders = as.factor(newdata$cylinders)
+newdata$year = as.factor(newdata$year)
+newdata$origin = as.factor(newdata$origin)
 #str(newdata)
 head(newdata)
 ```
@@ -133,6 +141,15 @@ lda.matrix = confusionMatrix(data=as.factor(lda.full.pred$class), reference = as
 lda.matrix
 ```
 
+
+```{r}
+lda.roc = roc(testdata$mpg01, as.numeric(lda.full.pred$class))
+plot(lda.roc, col="darkblue", main="Roc curve of LDA classifier")
+auc(lda.roc)
+```
+
+
+
 ```{r}
 # QDA
 qda.model = qda(mpg01~., data=newdata)
@@ -141,22 +158,28 @@ qda.model
 
 ```{r}
 qda.pred = predict(qda.model, newdata=testdata)
-#qda.pred
+#as.numeric(qda.pred$class)
 qda.matrix = confusionMatrix(data=as.factor(qda.pred$class), reference = as.factor(testdata$mpg01))
 qda.matrix
 ```
 
 
 ```{r}
-colnames(newdata)
+qda.roc = roc(testdata$mpg01, as.numeric(qda.pred$class))
+plot(qda.roc, col="black", main="Roc curve of QDA classifier")
+auc(qda.roc)
+
 ```
 
 
 
 ```{r}
-lda.partition = partimat(as.factor(mpg01)~cylinders+displacement+horsepower+weight+acceleration, testdata, method = "lda")
+# reset plot margin from bottom, left, top, right order.
+par(mar = c(2, 2, 1, 0.5))
 
-qda.partition = partimat(as.factor(mpg01)~cylinders+displacement+horsepower+weight+acceleration, testdata, method = "qda")
+lda.partition = partimat(mpg01~as.numeric(cylinders)+displacement+horsepower+weight+acceleration, testdata, method = "lda")
+
+qda.partition = partimat(mpg01~as.numeric(cylinders)+displacement+horsepower+weight+acceleration, testdata, method = "qda")
 ```
 
 
@@ -168,10 +191,17 @@ naive.model
 
 ```{r}
 naive.model.pred = predict(naive.model, newdata = testdata)
-#naive.model.pred
+#as.numeric(naive.model.pred)
 
-naive.matrix = confusionMatrix(as.factor(testdata$mpg01), as.factor(naive.model.pred))
+naive.matrix = confusionMatrix(testdata$mpg01, as.factor(naive.model.pred))
 naive.matrix
+```
+
+
+```{r}
+naive.roc <- roc(testdata$mpg01, as.numeric(naive.model.pred))
+plot(naive.roc, col = "red", main="Roc curve of Naive Bayes classifier")  
+auc(naive.roc)
 ```
 
 
@@ -180,7 +210,37 @@ naive.matrix
 
 
 
+```{r}
+#Logistic Regression using dplyr package.
+logistic.model = glm (mpg01~., data=traindata, family = "binomial")
+summary(logistic.model)
 
+```
+
+
+```{r}
+logistic.pred = predict(logistic.model, newdata=testdata, type = "response")
+#logistic.pred
+
+logistic.classification = ifelse(logistic.pred >= 0.5, 1, 0)
+head(logistic.classification)
+
+#logistic.matrix = confusionMatrix(testdata$mpg01, as.factor(logistic.pred$class))
+#logistic.matrix
+```
+
+
+```{r}
+logistic.matrix = confusionMatrix(testdata$mpg01, as.factor(logistic.classification))
+logistic.matrix
+```
+
+
+```{r}
+logistic.roc <- roc(testdata$mpg01, logistic.pred)  
+plot(logistic.roc, col = "brown", main="Roc curve of Logistic Regression classifier")  
+auc(logistic.roc)
+```
 
 
 

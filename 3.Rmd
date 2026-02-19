@@ -101,10 +101,11 @@ standardize=function(x){
 
 stand.newdata = as.data.frame(apply(newdata[, 3:6],2,standardize))
 newdata = cbind(newdata[, 1:2], stand.newdata, newdata[, 7:8])
-newdata$cylinders = as.factor(newdata$cylinders)
-newdata$year = as.factor(newdata$year)
-newdata$origin = as.factor(newdata$origin)
-str(newdata)
+#newdata$mpg01 = as.factor(newdata$mpg01)
+#newdata$cylinders = as.factor(newdata$cylinders)
+#newdata$year = as.factor(newdata$year)
+#newdata$origin = as.factor(newdata$origin)
+#str(newdata)
 head(newdata)
 ```
 
@@ -160,12 +161,17 @@ qda.partition = partimat(as.factor(mpg01)~cylinders+displacement+horsepower+weig
 
 
 ```{r}
-
+# using e1071 package to perform naive bayes classifier.
+naive.model = naiveBayes(mpg01~., traindata)
+naive.model
 ```
 
 ```{r}
+naive.model.pred = predict(naive.model, newdata = testdata)
+#naive.model.pred
 
-
+naive.matrix = confusionMatrix(as.factor(testdata$mpg01), as.factor(naive.model.pred))
+naive.matrix
 ```
 
 

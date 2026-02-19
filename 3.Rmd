@@ -10,6 +10,30 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 
+```{r}
+# check correlation and plot them using corrplot package
+library(corrplot)
+
+# split dataset using caTools pacakge, 
+library(caTools)
+
+# apply LDA  and QDA 
+library(MASS)
+
+# creating confusion matrix
+library(caret)
+
+# check equal covirance between classes 
+library(heplots)
+
+#check if LDA or QDA fit, using partimat to see partition plots
+library(klaR)
+
+# Naive Bayes
+library(e1071)
+```
+
+
 
 ```{r cars}
 data = read.csv("Auto.csv")
@@ -24,14 +48,6 @@ median(data$mpg)
 # then use as.integer to transform False  True value obtained from flag to 0 and 1.
 flag=I(data$mpg>=22.75)
 mpg01 = as.numeric(flag)
-#mpg01
-```
-
-
-```{r}
-newdata = cbind(mpg01, data[,2:8]) 
-ncol(newdata)
-head(newdata)
 ```
 
 
@@ -59,10 +75,6 @@ hist(newdata$mpg01)
 
 
 ```{r}
-library(corrplot)
-```
-
-```{r}
 corrplot(round(cor(data) ,2))
 ```
 
@@ -71,9 +83,29 @@ corrplot(round(cor(data) ,2))
 pairs(data[, 3:6])
 ```
 
+
+
 ```{r}
-# split dataset using caTools pacakge, 
-library(caTools)
+newdata = cbind(mpg01, data[,2:8]) 
+
+standardize=function(x){
+  z=(x-min(x))/(max(x)-min(x))
+  return(z)
+}
+```
+
+
+
+```{r}
+# normalize the numerical data, factorize categorical data. 
+
+stand.newdata = as.data.frame(apply(newdata[, 3:6],2,standardize))
+newdata = cbind(newdata[, 1:2], stand.newdata, newdata[, 7:8])
+newdata$cylinders = as.factor(newdata$cylinders)
+newdata$year = as.factor(newdata$year)
+newdata$origin = as.factor(newdata$origin)
+str(newdata)
+head(newdata)
 ```
 
 
@@ -81,27 +113,9 @@ library(caTools)
 split = sample.split(newdata$mpg01, SplitRatio = 0.8)
 traindata = subset(newdata, split == TRUE)
 testdata = subset(newdata, split == FALSE)
-
-#nrow(traindata)
-#nrow(testdata)
-
 #head(traindata)
-#head(testdata)
 ```
 
-
-```{r}
-# LDA 
-library(MASS)
-library(caret)
-
-```
-
-
-```{r}
-# check equal covirance between classes to check if LDA fits 
-library(heplots)
-```
 
 
 ```{r}
@@ -133,12 +147,6 @@ qda.matrix
 
 
 ```{r}
-#check partition plot using LDA and QDA.
-library(klaR)
-```
-
-
-```{r}
 colnames(newdata)
 ```
 
@@ -152,10 +160,13 @@ qda.partition = partimat(as.factor(mpg01)~cylinders+displacement+horsepower+weig
 
 
 ```{r}
-# Bayes Naive
 
 ```
 
+```{r}
+
+
+```
 
 
 

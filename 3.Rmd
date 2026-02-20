@@ -43,6 +43,9 @@ library(pROC)
 #apply knn
 library(class)
 
+# check Multicollinearity
+library(car)
+
 ```
 
 
@@ -95,10 +98,7 @@ pairs(data[, 3:6])
 ```
 
 
-
 ```{r}
-newdata = cbind(mpg01, data[,2:8]) 
-
 standardize=function(x){
   z=(x-min(x))/(max(x)-min(x))
   return(z)
@@ -106,12 +106,52 @@ standardize=function(x){
 ```
 
 
+```{r}
+stand.data = as.data.frame(apply(data[, 3:6],2,standardize))
+#head(stand.data)
+data = cbind(data[, 1:2], stand.data, data[, 7:8])
+#head(data)
+linear.full.model = lm(mpg ~ cylinders + displacement + horsepower + weight + acceleration + year + origin, data)
+vif(linear.full.model)
+summary(linear.full.model)
+```
+
+
+```{r}
+linear.reduced.model = lm(mpg ~ cylinders + displacement + horsepower + weight + acceleration, data)
+summary(linear.reduced.model)
+```
+
+
+
+```{r}
+anova(linear.reduced.model, linear.full.model)
+```
+
+
+
+```{r}
+selection <- stepAIC(linear.model, direction = "both")  
+summary(selection)
+```
+
+
+```{r}
+linear.reduced.model.two = lm(mpg ~ cylinders + displacement + horsepower + weight + year + origin, data)
+summary(linear.reduced.model.two)
+```
+
+
+```{r}
+anova(linear.reduced.model.two, linear.full.model)
+```
+
 
 ```{r}
 # normalize the numerical data, factorize categorical data. 
-
-stand.newdata = as.data.frame(apply(newdata[, 3:6],2,standardize))
-newdata = cbind(newdata[, 1:2], stand.newdata, newdata[, 7:8])
+newdata = cbind(mpg01, data[,2:5], data[, 7:8]) 
+stand.newdata = as.data.frame(apply(newdata[, 3:5],2,standardize))
+newdata = cbind(newdata[, 1:2], stand.newdata, newdata[, 6:7])
 newdata$mpg01 = as.factor(newdata$mpg01)
 newdata$cylinders = as.factor(newdata$cylinders)
 newdata$year = as.factor(newdata$year)
@@ -129,10 +169,12 @@ testdata = subset(newdata, split == FALSE)
 ```
 
 
+
 ```{r}
 lda.full.model = lda(mpg01~., traindata)
-#lda.full.model
+lda.full.model
 plot(lda.full.model, dimen=1, type="b")
+
 ```
 
 ```{r}
@@ -149,6 +191,7 @@ lda.roc = roc(testdata$mpg01, as.numeric(lda.full.pred$class))
 plot(lda.roc, col="darkblue", main="Roc curve of LDA classifier")
 auc(lda.roc)
 ```
+
 
 
 ```{r}
@@ -179,9 +222,9 @@ auc(qda.roc)
 # reset plot margin from bottom, left, top, right order.
 par(mar = c(2, 2, 1, 0.5))
 
-lda.partition = partimat(mpg01~as.numeric(cylinders)+displacement+horsepower+weight+acceleration, testdata, method = "lda")
+lda.partition = partimat(mpg01~as.numeric(cylinders)+displacement+horsepower+weight , testdata, method = "lda")
 
-qda.partition = partimat(mpg01~as.numeric(cylinders)+displacement+horsepower+weight+acceleration, testdata, method = "qda")
+qda.partition = partimat(mpg01~as.numeric(cylinders)+displacement+horsepower+weight, testdata, method = "qda")
 ```
 
 
@@ -263,7 +306,8 @@ ggplot(data.frame(K = k.values, Accuracy = best.k), aes(x = K, y = Accuracy)) +
 ```
 
 ```{r}
-best.k = c(5, 7, 11, 15)
+head(traindata)
+best.k = c(5, 7, 9)
 knn.pred = sapply( best.k, function(k) {
   knn.model = knn(train = traindata, test = testdata, cl=traindata$mpg01, k=k)
   k.matrix = table(testdata$mpg01, knn.model)
@@ -273,6 +317,7 @@ knn.pred = sapply( best.k, function(k) {
 ```
 
 ```{r}
+#head(traindata)
 knn.model = knn(train = traindata, test = testdata, cl=traindata$mpg01, k=7)
 k.matrix = table(testdata$mpg01, knn.model)
 
@@ -283,17 +328,80 @@ auc(knn.roc)
 
 
 ```{r}
+newdata.two = cbind(mpg01, data[,2:5], data[, 7:8]) 
+stand.newdata.two = as.data.frame(apply(newdata[, 3:5],2,standardize))
+newdata.two = cbind(newdata.two[, 1:2], stand.newdata.two, newdata.two[, 6:7])
+#str(newdata.two)
+newdata.two$cylinders=as.numeric(as.integer(newdata.two$cylinders))
+newdata.two$year = as.numeric(as.integer(newdata.two$year))
+newdata.two$origin = as.numeric(as.integer(newdata.two$origin))
+#str(newdata.two)
+
+pca.model <- prcomp(newdata.two[, 2:7], scale. = FALSE, center = TRUE, retx = TRUE)
+pca.model
+
+```
+
+```{r}
+pca.var.prop = (pca.model$sdev^2)/sum( (pca.model$sdev^2)  )
+pca.var.prop
+plot(pca.var.prop, main="PCA analysis", type = "b", xlab = "Number of components", ylab = "Proportion of variance")
 
 ```
 
 
+```{r}
+which(cumsum(pca.var.prop) >= 0.9)[1]
+```
+
+```{r}
+#colnames(newdata.two[, 2:7])
+```
+
+```{r}
+
+head(traindata)
 
 
+k.values.two = c(5, 7, 9, 11, 13, 15)
+
+best.k.two = sapply( k.values.two, function(k) {
+  knn.model = knn(train = traindata[, 2:3], test = testdata[, 2:3], cl=traindata$mpg01, k=k)
+  
+  1 - mean(knn.model != testdata$mpg01)
+} 
+) 
+
+ggplot(data.frame(K = k.values.two, Accuracy = best.k.two), aes(x = K, y = Accuracy)) +
+  geom_line(color = "darkgreen", size = 1) +
+  geom_point(color = "brown", size = 3) +
+  labs(title = "Model Accuracy for Different K Values",
+       x = "Number of Neighbors (K)",
+       y = "Accuracy") +
+  theme_minimal()
+```
 
 
+```{r}
+
+best.k.two = c(5, 15)
+knn.pred.two = sapply( best.k.two, function(k) {
+  knn.model = knn(train = traindata[, 2:3], test = testdata[, 2:3], cl=traindata$mpg01, k=k)
+  k.matrix = table(testdata$mpg01, knn.model)
+  print(confusionMatrix(k.matrix))
+}
+)
+```
 
 
+```{r}
+knn.model.two = knn(train = traindata[,2:3], test = testdata[, 2:3], cl=traindata$mpg01, k=5)
+k.matrix = table(testdata$mpg01, knn.model.two)
 
+knn.roc.two = roc(testdata$mpg01, as.numeric(knn.model.two))
+plot(knn.roc.two, col="lightblue", main="Roc curve of PCA-KNN")
+auc(knn.roc.two)
+```
 
 
 

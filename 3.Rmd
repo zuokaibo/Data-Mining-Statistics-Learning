@@ -40,6 +40,9 @@ library(dplyr)
 # apply ROC curve
 library(pROC) 
 
+#apply knn
+library(class)
+
 ```
 
 
@@ -126,10 +129,9 @@ testdata = subset(newdata, split == FALSE)
 ```
 
 
-
 ```{r}
 lda.full.model = lda(mpg01~., traindata)
-lda.full.model
+#lda.full.model
 plot(lda.full.model, dimen=1, type="b")
 ```
 
@@ -149,12 +151,12 @@ auc(lda.roc)
 ```
 
 
-
 ```{r}
 # QDA
 qda.model = qda(mpg01~., data=newdata)
-qda.model
+#qda.model
 ```
+
 
 ```{r}
 qda.pred = predict(qda.model, newdata=testdata)
@@ -186,7 +188,7 @@ qda.partition = partimat(mpg01~as.numeric(cylinders)+displacement+horsepower+wei
 ```{r}
 # using e1071 package to perform naive bayes classifier.
 naive.model = naiveBayes(mpg01~., traindata)
-naive.model
+#naive.model
 ```
 
 ```{r}
@@ -203,11 +205,6 @@ naive.roc <- roc(testdata$mpg01, as.numeric(naive.model.pred))
 plot(naive.roc, col = "red", main="Roc curve of Naive Bayes classifier")  
 auc(naive.roc)
 ```
-
-
-
-
-
 
 
 ```{r}
@@ -245,10 +242,63 @@ auc(logistic.roc)
 
 ```{r}
 #knn
+#sqrt(nrow(testdata))
+k.values = c(5, 7, 9, 11, 13, 15)
 
+best.k = sapply( k.values, function(k) {
+  knn.model = knn(train = traindata, test = testdata, cl=traindata$mpg01, k=k)
+  
+  1 - mean(knn.model != testdata$mpg01)
+} 
+) 
 
+ggplot(data.frame(K = k.values, Accuracy = best.k), aes(x = K, y = Accuracy)) +
+  geom_line(color = "darkgreen", size = 1) +
+  geom_point(color = "brown", size = 3) +
+  labs(title = "Model Accuracy for Different K Values",
+       x = "Number of Neighbors (K)",
+       y = "Accuracy") +
+  theme_minimal()
 
 ```
+
+```{r}
+best.k = c(5, 7, 11, 15)
+knn.pred = sapply( best.k, function(k) {
+  knn.model = knn(train = traindata, test = testdata, cl=traindata$mpg01, k=k)
+  k.matrix = table(testdata$mpg01, knn.model)
+  print(confusionMatrix(k.matrix))
+}
+)
+```
+
+```{r}
+knn.model = knn(train = traindata, test = testdata, cl=traindata$mpg01, k=7)
+k.matrix = table(testdata$mpg01, knn.model)
+
+knn.roc = roc(testdata$mpg01, as.numeric(knn.model))
+plot(knn.roc, col="lightblue", main="Roc curve of KNN classifier")
+auc(knn.roc)
+```
+
+
+```{r}
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

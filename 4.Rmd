@@ -14,7 +14,6 @@ knitr::opts_chunk$set(echo = TRUE)
 m = 1000
 n = 101
 x = 2*pi*seq(-1, 1, length = n)
-#x
 ```
 
 
@@ -27,7 +26,6 @@ fvlp = fvnw = fvss = matrix(0, nrow= n, ncol= m)
 for (j in 1:m) {
   y = (1-x**2)*exp((-0.5)*x**2) + rnorm(length(x),mean=0,  sd=0.2)
   fvlp[,j] = predict(loess(y~x, span=0.75), newdata = x)
-  #varfvlp[,j] = fvlp[,j] - mean(fvlp[,j])
   fvnw[,j] = ksmooth(x, y, kernel = "normal", bandwidth = 0.2, x.points = x)$y 
   fvss[,j] = predict(smooth.spline(y~x), newdata=x)$y
 }
@@ -68,7 +66,6 @@ file = matrix(file$x, nrow=n, ncol = 1, byrow = TRUE)
 meanlp.matrix=matrix(meanlp, nrow = n, ncol=1, byrow = TRUE)
 meannw.matrix = matrix(meannw, nrow=n, ncol = 1, byrow=TRUE)
 meanss.matrix = matrix(meanss, nrow=n, ncol=1, byrow = TRUE)
-
 ```
 
 
@@ -116,8 +113,6 @@ msenw = nwbias**2 + varfvnw
 msess = ssbias**2 + varfvss
 max = max(mselp, msenw, msess)
 min = min(mselp, msenw, msess)
-max
-min
 ```
 
 
@@ -129,8 +124,108 @@ legend(x="topright", legend = c("mselp", "msenw", "msess"), fill = c("black", "c
 ```
 
 
+```{r}
+set.seed(79)
+x2 = round(2*pi*sort(c(0.5,-1 + rbeta(50,2,2), rbeta(50,2,2))), 8)
+```
+
+```{r}
+fvlp2 = fvnw2 = fvss2 = matrix(0, nrow= n, ncol= m)
+```
 
 
+```{r}
+for (g in 1:m) {
+  y = (1-(x2)**2)*exp((-0.5)*(x2)**2) + rnorm(length(x2),mean=0,  sd=0.2)
+  fvlp2[,g] = predict(loess(y~x2, span= 0.3365), newdata = x2)
+  fvnw2[,g] = ksmooth(x2, y, kernel = "normal", bandwidth = 0.2, x.points = x2)$y 
+  fvss2[,g] = predict(smooth.spline(y~x2, spar = 0.7163), newdata=x2)$y
+}
+```
+
+
+```{r}
+meanlp2 = apply(fvlp2,1,mean)
+meannw2 = apply(fvnw2,1,mean)
+meanss2 = apply(fvss2,1,mean)
+```
+
+
+```{r}
+dmin2 = min( meanlp2, meannw2, meanss2)
+dmax2 = max( meanlp2, meannw2, meanss2)
+```
+
+```{r}
+matplot(x2, meanlp2, "l", ylim=c(dmin2, dmax2), ylab="Response", lwd = 3)
+matlines(x2, meannw2, col="red", lwd = 3)
+matlines(x2, meanss2, col="blue", lwd = 3)
+points(x2,y, pch=19)
+legend(x ="topright", legend = c("meanlp2", "meannw2", "meanss2"), fill = c( "black","red", "blue"))
+```
+
+```{r}
+meanlp2.matrix = matrix(meanlp2, nrow=n, ncol=1, byrow=TRUE)
+meannw2.matrix = matrix(meannw2, nrow=n, ncol=1, byrow=TRUE)
+meanss2.matrix = matrix(meanss2, nrow=n, ncol=1, byrow=TRUE)
+```
+
+
+```{r}
+lpbias2 = meanlp2.matrix - file
+nwbias2 = meannw2.matrix - file
+ssbias2 = meanss2.matrix - file
+```
+
+
+```{r}
+matplot(x2,lpbias2, "l", ylab="Bias", lwd = 2, xlab="x2")
+matlines(x2,nwbias2, col="red", lwd = 3)
+matlines(x2,ssbias2, col="green", lwd = 3)
+legend(x ="topright", legend = c("lpbias2", "nwbias2", "ssbias2"), fill = c( "black","red", "green"))
+```
+
+
+```{r}
+varfvlprow2 = varfvnwrow2 = varfvssrow2 = matrix(0, nrow= n, ncol= m)
+for (a in 1:m) {
+  varfvlprow2[,a] = (fvlp2[,a] - meanlp2)**2
+  varfvnwrow2[,a] = (fvnw2[,a] - meannw2)**2
+  varfvssrow2[,a] = (fvss2[,a] - meanss2)**2
+}
+```
+
+
+```{r}
+varfvlp2 = apply(varfvlprow2, 1, mean)
+varfvnw2 = apply(varfvnwrow2, 1, mean)
+varfvss2 = apply(varfvssrow2, 1, mean)
+```
+
+
+```{r}
+matplot(x2,varfvlp2, "l", ylab="Variance", ylim = c(0.0001, 0.04) ,lwd = 2, xlab="x2")
+matlines(x2,varfvnw2, col="blue", lwd = 3)
+matlines(x2,varfvss2, col="darkred", lwd = 3)
+legend(x="topright", legend = c("lpvar2", "nwvar2", "ssvar2"), fill = c("black", "blue", "darkred"))
+```
+
+
+```{r}
+mselp2 = (lpbias2)**2 + varfvlp2
+msenw2 = (nwbias2)**2 + varfvnw2
+msess2 = (ssbias2)**2 + varfvss2
+max2 = max(mselp2, msenw2, msess2)
+min2 = min(mselp2, msenw2, msess2)
+```
+
+
+```{r}
+matplot(x2,mselp2, "l", ylab="MSE", ylim = c(min, max) ,lwd = 2, xlab="x2")
+matlines(x2,msenw2, col="coral4", lwd = 3)
+matlines(x2,msess2, col="bisque3", lwd = 3)
+legend(x="topright", legend = c("mselp2", "msenw2", "msess2"), fill = c("black", "coral4", "bisque3"))
+```
 
 
 

@@ -27,39 +27,115 @@ fvlp = fvnw = fvss = matrix(0, nrow= n, ncol= m)
 for (j in 1:m) {
   y = (1-x**2)*exp((-0.5)*x**2) + rnorm(length(x),mean=0,  sd=0.2)
   fvlp[,j] = predict(loess(y~x, span=0.75), newdata = x)
-  fvnw[,j] = ksmooth(x, y, kernel = "normal", ) 
+  #varfvlp[,j] = fvlp[,j] - mean(fvlp[,j])
+  fvnw[,j] = ksmooth(x, y, kernel = "normal", bandwidth = 0.2, x.points = x)$y 
+  fvss[,j] = predict(smooth.spline(y~x), newdata=x)$y
 }
 ```
 
 
 ```{r}
+meanlp = apply(fvlp,1,mean)
+meannw = apply(fvnw,1,mean)
+meanss = apply(fvss,1,mean)
+```
+
+
+```{r}
+dmin = min( meanlp, meannw, meanss)
+dmax = max( meanlp, meannw, meanss)
+dmin
+dmax
+```
+
+
+```{r}
+matplot(x, meanlp, "l", ylim=c(dmin, dmax), ylab="Response", lwd = 3)
+matlines(x, meannw, col="red", lwd = 3)
+matlines(x, meanss, col="blue", lwd = 3)
+points(x,y, pch=19)
+legend(x ="topright", legend = c("meanlp", "meannw", "meanss"), fill = c( "black","red", "blue"))
+```
+
+
+```{r}
+file = read.csv("HW04part2-1.x.csv")
+file$x = as.numeric(file$x)
+file = matrix(file$x, nrow=n, ncol = 1, byrow = TRUE)
+```
+
+```{r}
+meanlp.matrix=matrix(meanlp, nrow = n, ncol=1, byrow = TRUE)
+meannw.matrix = matrix(meannw, nrow=n, ncol = 1, byrow=TRUE)
+meanss.matrix = matrix(meanss, nrow=n, ncol=1, byrow = TRUE)
 
 ```
 
 
 ```{r}
+lpbias = meanlp.matrix - file
+nwbias = meannw.matrix - file
+ssbias = meanss.matrix - file
+```
 
+```{r}
+matplot(x,lpbias, "l", ylab="Bias", lwd = 2, xlab="x")
+matlines(x,nwbias, col="red", lwd = 3)
+matlines(x,ssbias, col="green", lwd = 3)
+legend(x ="topright", legend = c("lpbias", "nwbias", "ssbias"), fill = c( "black","red", "green"))
+```
+
+```{r}
+varfvlprow = varfvnwrow = varfvssrow = matrix(0, nrow= n, ncol= m)
+for (i in 1:m) {
+  varfvlprow[,i] = (fvlp[,i] - meanlp)**2
+  varfvnwrow[,i] = (fvnw[,i] - meannw)**2
+  varfvssrow[,i] = (fvss[,i] - meanss)**2
+}
 ```
 
 
 ```{r}
-
+varfvlp = apply(varfvlprow, 1, mean)
+varfvnw = apply(varfvnwrow, 1, mean)
+varfvss = apply(varfvssrow, 1, mean)
 ```
 
 
 ```{r}
-
+matplot(x,varfvlp, "l", ylab="Variance", ylim = c(0.0001, 0.04) ,lwd = 2, xlab="x")
+matlines(x,varfvnw, col="blue", lwd = 3)
+matlines(x,varfvss, col="darkred", lwd = 3)
+legend(x="topright", legend = c("lpvar", "nwvar", "ssvar"), fill = c("black", "blue", "darkred"))
 ```
 
 
 ```{r}
-
+mselp = lpbias**2 + varfvlp
+msenw = nwbias**2 + varfvnw
+msess = ssbias**2 + varfvss
+max = max(mselp, msenw, msess)
+min = min(mselp, msenw, msess)
+max
+min
 ```
 
 
 ```{r}
-
+matplot(x,mselp, "l", ylab="MSE", ylim = c(min, max) ,lwd = 2, xlab="x")
+matlines(x,msenw, col="coral4", lwd = 3)
+matlines(x,msess, col="bisque3", lwd = 3)
+legend(x="topright", legend = c("mselp", "msenw", "msess"), fill = c("black", "coral4", "bisque3"))
 ```
+
+
+
+
+
+
+
+
+
 
 
 

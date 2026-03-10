@@ -187,7 +187,7 @@ legend(x ="topright", legend = c("lpbias2", "nwbias2", "ssbias2"), fill = c( "bl
 
 
 ```{r}
-varfvlprow2 = varfvnwrow2 = varfvssrow2 = matrix(0, nrow= n, ncol= m)
+varfvlprow2 = varfvnwrow2 = varfvssrow2 = matrix(0, nrow=n, ncol=m)
 for (a in 1:m) {
   varfvlprow2[,a] = (fvlp2[,a] - meanlp2)**2
   varfvnwrow2[,a] = (fvnw2[,a] - meannw2)**2
@@ -221,16 +221,47 @@ min2 = min(mselp2, msenw2, msess2)
 
 
 ```{r}
-matplot(x2,mselp2, "l", ylab="MSE", ylim = c(min, max) ,lwd = 2, xlab="x2")
+matplot(x2,mselp2, "l", ylab="MSE", ylim = c(min2, max2) ,lwd = 2, xlab="x2")
 matlines(x2,msenw2, col="coral4", lwd = 3)
 matlines(x2,msess2, col="bisque3", lwd = 3)
 legend(x="topright", legend = c("mselp2", "msenw2", "msess2"), fill = c("black", "coral4", "bisque3"))
 ```
 
+```{r}
+file2 = read.csv("HW04part2-1.x.csv")
+```
 
 
+```{r  }
+calcSSE = function(b){
+  loessMod = try(loess(y ~ x, span=b), silent=T)
+  res = try(loessMod$residuals, silent=T)
+  if(!inherits(res, "try-error")){
+      sse = sum(res^2)  
+  }else{
+    sse = 99999
+  }
+  return(sse)
+}
 
+optimize(calcSSE, c(0.01,1))
 
+```
+
+```{r}
+calcSSE2 = function(c){
+  loessMod = try(loess(y ~ x2, span=c), silent=T)
+  res = try(loessMod$residuals, silent=T)
+  if(!inherits(res, "try-error")){
+      sse = sum(res^2)  
+  }else{
+    sse = 99999
+  }
+  return(sse)
+}
+
+optimize(calcSSE2, c(0.01,1))
+```
 
 
 

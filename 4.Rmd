@@ -11,11 +11,60 @@ knitr::opts_chunk$set(echo = TRUE)
 
 
 ```{r cars}
-
+m = 1000
+n = 101
+x = 2*pi*seq(-1, 1, length = n)
+#x
 ```
 
 
 ```{r pressure, echo=FALSE}
+fvlp = fvnw = fvss = matrix(0, nrow= n, ncol= m)
+```
+
+
+```{r}
+for (j in 1:m) {
+  y = (1-x**2)*exp((-0.5)*x**2) + rnorm(length(x),mean=0,  sd=0.2)
+  fvlp[,j] = predict(loess(y~x, span=0.75), newdata = x)
+  fvnw[,j] = ksmooth(x, y, kernel = "normal", ) 
+}
+```
+
+
+```{r}
 
 ```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+
+
+
+
+
 

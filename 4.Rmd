@@ -56,15 +56,6 @@ dmax
 
 
 ```{r}
-matplot(x, meanlp, "l", ylim=c(dmin, dmax), ylab="Response", lwd = 3)
-matlines(x, meannw, col="red", lwd = 3)
-matlines(x, meanss, col="blue", lwd = 3)
-points(x,y, pch=19)
-legend(x ="topright", legend = c("meanlp", "meannw", "meanss"), fill = c( "black","red", "blue"))
-```
-
-
-```{r}
 file = read.csv("HW04part2-1.x.csv")
 file$x = as.numeric(file$x)
 file = matrix(file$x, nrow=n, ncol = 1, byrow = TRUE)
@@ -83,12 +74,7 @@ nwbias = meannw.matrix - file
 ssbias = meanss.matrix - file
 ```
 
-```{r}
-matplot(x,lpbias, "l", ylab="Bias", lwd = 2, xlab="x")
-matlines(x,nwbias, col="red", lwd = 3)
-matlines(x,ssbias, col="green", lwd = 3)
-legend(x ="topright", legend = c("lpbias", "nwbias", "ssbias"), fill = c( "black","red", "green"))
-```
+
 
 ```{r}
 varfvlprow = varfvnwrow = varfvssrow = matrix(0, nrow= n, ncol= m)
@@ -108,14 +94,6 @@ varfvss = apply(varfvssrow, 1, mean)
 
 
 ```{r}
-matplot(x,varfvlp, "l", ylab="Variance", ylim = c(0.0001, 0.04) ,lwd = 2, xlab="x")
-matlines(x,varfvnw, col="blue", lwd = 3)
-matlines(x,varfvss, col="darkred", lwd = 3)
-legend(x="topright", legend = c("lpvar", "nwvar", "ssvar"), fill = c("black", "blue", "darkred"))
-```
-
-
-```{r}
 mselp = lpbias**2 + varfvlp
 msenw = nwbias**2 + varfvnw
 msess = ssbias**2 + varfvss
@@ -125,12 +103,33 @@ min = min(mselp, msenw, msess)
 
 
 ```{r}
+par(mfrow = c(1, 2))
+matplot(x, meanlp, "l", ylim=c(dmin, dmax), ylab="Response", lwd = 3)
+matlines(x, meannw, col="red", lwd = 3)
+matlines(x, meanss, col="blue", lwd = 3)
+points(x,y, pch=19)
+legend(x ="topright", title= "Mean",legend = c("lp", "nw", "ss"), fill = c( "black","red", "blue"))
+
+matplot(x,lpbias, "l", ylab="Bias", lwd = 2, xlab="x")
+matlines(x,nwbias, col="red", lwd = 3)
+matlines(x,ssbias, col="green", lwd = 3)
+legend(x ="topright", title= "Bias", legend = c("lp", "nw", "ss"), fill = c( "black","red", "green"))
+```
+
+
+```{r}
+par(mfrow = c(1, 2))
+matplot(x,varfvlp, "l", ylab="Variance", ylim = c(0.0001, 0.04) ,lwd = 2, xlab="x")
+matlines(x,varfvnw, col="blue", lwd = 3)
+matlines(x,varfvss, col="darkred", lwd = 3)
+legend(x="top",legend = c("lpvar", "nwvar", "ssvar"), fill = c("black", "blue", "darkred"))
+
 matplot(x,mselp, "l", ylab="MSE", ylim = c(min, max) ,lwd = 2, xlab="x")
 matlines(x,msenw, col="coral4", lwd = 3)
 matlines(x,msess, col="bisque3", lwd = 3)
-legend(x="topright", legend = c("mselp", "msenw", "msess"), fill = c("black", "coral4", "bisque3"))
-```
+legend(x="top",legend = c("lpmse", "nwmse", "ssmse"), fill = c("black", "coral4", "bisque3"))
 
+```
 
 ```{r}
 set.seed(79)
@@ -164,13 +163,6 @@ dmin2 = min( meanlp2, meannw2, meanss2)
 dmax2 = max( meanlp2, meannw2, meanss2)
 ```
 
-```{r}
-matplot(x2, meanlp2, "l", ylim=c(dmin2, dmax2), ylab="Response", lwd = 3)
-matlines(x2, meannw2, col="red", lwd = 3)
-matlines(x2, meanss2, col="blue", lwd = 3)
-points(x2,y, pch=19)
-legend(x ="topright", legend = c("meanlp2", "meannw2", "meanss2"), fill = c( "black","red", "blue"))
-```
 
 ```{r}
 meanlp2.matrix = matrix(meanlp2, nrow=n, ncol=1, byrow=TRUE)
@@ -185,13 +177,6 @@ nwbias2 = meannw2.matrix - file
 ssbias2 = meanss2.matrix - file
 ```
 
-
-```{r}
-matplot(x2,lpbias2, "l", ylab="Bias", lwd = 2, xlab="x2")
-matlines(x2,nwbias2, col="red", lwd = 3)
-matlines(x2,ssbias2, col="green", lwd = 3)
-legend(x ="topright", legend = c("lpbias2", "nwbias2", "ssbias2"), fill = c( "black","red", "green"))
-```
 
 
 ```{r}
@@ -211,13 +196,6 @@ varfvss2 = apply(varfvssrow2, 1, mean)
 ```
 
 
-```{r}
-matplot(x2,varfvlp2, "l", ylab="Variance", ylim = c(0.0001, 0.04) ,lwd = 2, xlab="x2")
-matlines(x2,varfvnw2, col="blue", lwd = 3)
-matlines(x2,varfvss2, col="darkred", lwd = 3)
-legend(x="topright", legend = c("lpvar2", "nwvar2", "ssvar2"), fill = c("black", "blue", "darkred"))
-```
-
 
 ```{r}
 mselp2 = (lpbias2)**2 + varfvlp2
@@ -228,12 +206,54 @@ min2 = min(mselp2, msenw2, msess2)
 ```
 
 
+
 ```{r}
+par(mfrow=c(1, 2))
+matplot(x2, meanlp2, "l", ylim=c(dmin2, dmax2), ylab="Response", lwd = 3)
+matlines(x2, meannw2, col="red", lwd = 3)
+matlines(x2, meanss2, col="blue", lwd = 3)
+points(x2,y, pch=19)
+legend(x ="topright", title="Mean",legend = c("lp2", "nw2", "ss2"), fill = c( "black","red", "blue"))
+
+matplot(x2,lpbias2, "l", ylab="Bias", lwd = 2, xlab="x2")
+matlines(x2,nwbias2, col="red", lwd = 3)
+matlines(x2,ssbias2, col="green", lwd = 3)
+legend(x ="topright", title="Bias",legend = c("lp2", "nw2", "ss2"), fill = c( "black","red", "green"))
+
+```
+
+
+```{r}
+par(mfrow=c(1, 2))
+matplot(x2,varfvlp2, "l", ylab="Variance", ylim = c(0.0001, 0.04) ,lwd = 2, xlab="x2")
+matlines(x2,varfvnw2, col="blue", lwd = 3)
+matlines(x2,varfvss2, col="darkred", lwd = 3)
+legend(x="top", legend = c("lpvar2", "nwvar2", "ssvar2"), fill = c("black", "blue", "darkred"))
+
 matplot(x2,mselp2, "l", ylab="MSE", ylim = c(min2, max2) ,lwd = 2, xlab="x2")
 matlines(x2,msenw2, col="coral4", lwd = 3)
 matlines(x2,msess2, col="bisque3", lwd = 3)
-legend(x="topright", legend = c("mselp2", "msenw2", "msess2"), fill = c("black", "coral4", "bisque3"))
+legend(x="top", legend = c("mselp2", "msenw2", "msess2"), fill = c("black", "coral4", "bisque3"))
+
 ```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ```{r}
 file2 = read.csv("HW04part2-1.x.csv")

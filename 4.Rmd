@@ -33,6 +33,14 @@ for (j in 1:m) {
 
 
 ```{r}
+plot(x,y, pch=19)
+
+boxplot(y, main="Box Plot of Y values")
+```
+
+
+
+```{r}
 meanlp = apply(fvlp,1,mean)
 meannw = apply(fvnw,1,mean)
 meanss = apply(fvss,1,mean)

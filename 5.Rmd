@@ -1,0 +1,125 @@
+---
+title: "HW5"
+author: "Bo"
+date: "2026-03-21"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r cars}
+data = read.csv("processed.csv", header = TRUE)
+
+data = na.omit(data)
+
+data$num = ifelse(data$num == 0, 0, 1)
+
+head(data)
+```
+
+
+```{r}
+# split dataset into training and testing
+library(caTools)
+
+# set up baseline regression: logistic regression. 
+library(dplyr)
+
+
+
+```
+
+
+
+```{r pressure, echo=FALSE}
+# splitting dataset
+split = sample.split(data, SplitRatio = 0.8)
+
+data.train = subset(data, split == "TRUE")
+data.test = subset(data, split == "FALSE")
+
+dim(data.train)
+dim(data.test)
+```
+
+```{r}
+str(data)
+```
+
+
+```{r}
+#which(is.na(data))
+#sum(is.na(data))
+```
+
+
+```{r}
+#names(data)
+logis = glm(as.factor(num)~age+sex+cp+trestbps+chol+fbs+restecg+thalach+exang+oldpeak+slope+ca+thal, data=data.train, family = "binomial")
+logis
+summary(logis)
+```
+
+
+```{r}
+logis.pred = predict(logis, data.test, type="response")
+logis.pred = as.data.frame(logis.pred)
+
+logis.pred = ifelse(logis.pred >= 0.5, 1, 0)
+
+logis.confusion = table(data.test$num, logis.pred)
+logis.confusion
+```
+
+```{r}
+
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

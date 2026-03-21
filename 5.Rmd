@@ -32,8 +32,14 @@ library(dplyr)
 # random forest
 library(randomForest)
 
-```
+# boosting algorithms, here gbm is used, there are other two boosting algorithms
+library(gbm)
+library(adabag)
 
+# cross validation
+library(caret)
+
+```
 
 
 ```{r pressure, echo=FALSE}
@@ -60,30 +66,48 @@ summary(logis)
 logis.pred = predict(logis, data.test, type="response")
 logis.pred = as.data.frame(logis.pred)
 logis.pred = ifelse(logis.pred >= 0.5, 1, 0)
-logis.confusion = table(data.test$num, logis.pred)
+logis.confusion = confusionMatrix(as.factor(data.test$num), as.factor(logis.pred))
 logis.confusion
 ```
 
 
-
 ```{r}
 random = randomForest(as.factor(num)~age+sex+cp+trestbps+chol+fbs+restecg+thalach+exang+oldpeak+slope+ca+thal, data=data.test, importance=TRUE)
-random
-#summary(random)
-plot(random)
+
 #importance(random, type=1)
 #importance(random, type=2)
 varImpPlot(random)
+
+random$confusion
+training.accuracy = sum(diag(random$confusion))/sum(random$confusion)
+cat("\n", "above is the accuracy of training dataset: ")
+training.accuracy
+
 random.pred = predict(random, data.test, type="class")
-random.confusion = table(random.pred, data.test$num)
+
+random.confusion = confusionMatrix(as.factor(random.pred), as.factor(data.test$num))
 random.confusion
 ```
 
 
 
 ```{r}
-
+boost = suppressWarnings(gbm(
+  as.factor(num)~age+sex+cp+trestbps+chol+fbs+restecg+thalach+exang+oldpeak+slope+as.integer(ca)+as.integer(thal),
+  data = data.train,
+  distribution = "gaussian",
+  n.trees = 500,
+  interaction.depth = 3,
+  shrinkage = 0.05,
+  n.minobsinnode = 2
+))
+boost.pred = suppressWarnings(predict(boost, newdata = data.test))
+boost.pred = as.factor(ifelse(boost.pred >=0.5, 1, 0))
+data.test$num = as.factor(data.test$num)
+confusionMatrix(boost.pred, data.test$num)
+summary(boost)
 ```
+
 
 
 

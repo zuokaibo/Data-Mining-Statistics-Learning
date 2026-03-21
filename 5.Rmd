@@ -29,7 +29,8 @@ library(caTools)
 # set up baseline regression: logistic regression. 
 library(dplyr)
 
-
+# random forest
+library(randomForest)
 
 ```
 
@@ -38,16 +39,10 @@ library(dplyr)
 ```{r pressure, echo=FALSE}
 # splitting dataset
 split = sample.split(data, SplitRatio = 0.8)
-
 data.train = subset(data, split == "TRUE")
 data.test = subset(data, split == "FALSE")
-
 dim(data.train)
 dim(data.test)
-```
-
-```{r}
-str(data)
 ```
 
 
@@ -62,27 +57,33 @@ str(data)
 logis = glm(as.factor(num)~age+sex+cp+trestbps+chol+fbs+restecg+thalach+exang+oldpeak+slope+ca+thal, data=data.train, family = "binomial")
 logis
 summary(logis)
-```
-
-
-```{r}
 logis.pred = predict(logis, data.test, type="response")
 logis.pred = as.data.frame(logis.pred)
-
 logis.pred = ifelse(logis.pred >= 0.5, 1, 0)
-
 logis.confusion = table(data.test$num, logis.pred)
 logis.confusion
 ```
 
+
+
 ```{r}
-
-
-
+random = randomForest(as.factor(num)~age+sex+cp+trestbps+chol+fbs+restecg+thalach+exang+oldpeak+slope+ca+thal, data=data.test, importance=TRUE)
+random
+#summary(random)
+plot(random)
+#importance(random, type=1)
+#importance(random, type=2)
+varImpPlot(random)
+random.pred = predict(random, data.test, type="class")
+random.confusion = table(random.pred, data.test$num)
+random.confusion
 ```
 
 
 
+```{r}
+
+```
 
 
 

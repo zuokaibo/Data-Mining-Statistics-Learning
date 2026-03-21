@@ -10,7 +10,6 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 
-
 ```{r cars}
 data = read.csv("processed.csv", header = TRUE)
 
@@ -59,15 +58,21 @@ dim(data.test)
 
 
 ```{r}
-#names(data)
 logis = glm(as.factor(num)~age+sex+cp+trestbps+chol+fbs+restecg+thalach+exang+oldpeak+slope+ca+thal, data=data.train, family = "binomial")
-logis
-summary(logis)
+
+#summary(logis)
+
 logis.pred = predict(logis, data.test, type="response")
 logis.pred = as.data.frame(logis.pred)
+
 logis.pred = ifelse(logis.pred >= 0.5, 1, 0)
 logis.confusion = confusionMatrix(as.factor(data.test$num), as.factor(logis.pred))
-logis.confusion
+
+logis.accuracy = logis.confusion$overall[1]
+logis.testingerror = 1-logis.accuracy
+
+paste("Accuracy of Logistic Regression is :", logis.accuracy)
+paste("Testing Error of Logistic Regression is :", logis.testingerror)
 ```
 
 
@@ -80,20 +85,20 @@ varImpPlot(random)
 
 random$confusion
 training.accuracy = sum(diag(random$confusion))/sum(random$confusion)
-cat("\n", "above is the accuracy of training dataset: ")
-training.accuracy
+paste("above is the accuracy of training dataset: ", training.accuracy)
+
 
 random.pred = predict(random, data.test, type="class")
 
 random.confusion = confusionMatrix(as.factor(random.pred), as.factor(data.test$num))
 random.confusion
-```
 
+```
 
 
 ```{r}
 boost = suppressWarnings(gbm(
-  as.factor(num)~age+sex+cp+trestbps+chol+fbs+restecg+thalach+exang+oldpeak+slope+as.integer(ca)+as.integer(thal),
+  as.factor(num)~age+sex+cp+trestbps+chol+fbs+restecg+thalach+exang+oldpeak+slope+as.integer(ca)+as.integer(thal), 
   data = data.train,
   distribution = "gaussian",
   n.trees = 500,
@@ -101,11 +106,21 @@ boost = suppressWarnings(gbm(
   shrinkage = 0.05,
   n.minobsinnode = 2
 ))
+
+summary(boost)
+
 boost.pred = suppressWarnings(predict(boost, newdata = data.test))
+
 boost.pred = as.factor(ifelse(boost.pred >=0.5, 1, 0))
 data.test$num = as.factor(data.test$num)
-confusionMatrix(boost.pred, data.test$num)
-summary(boost)
+boost.confusion = suppressWarnings(confusionMatrix(boost.pred, data.test$num))
+
+
+boost.accuracy = boost.confusion$overall[1]
+paste("Accuracy of boosting is: ", boost.accuracy)
+
+boost.testingerror = 1-boost.accuracy
+paste("Testing Error of boosting is: ", boost.testingerror)
 ```
 
 

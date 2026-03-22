@@ -15,6 +15,10 @@ data = read.csv("processed.csv", header = TRUE)
 
 data = na.omit(data)
 
+
+data$ca = as.factor(data$ca)
+data$thal = as.factor(data$thal)
+
 data$num = ifelse(data$num == 0, 0, 1)
 
 head(data)
@@ -38,6 +42,8 @@ library(adabag)
 # cross validation
 library(caret)
 
+# visualize a tree planted by random forest
+#library(reprtree)
 ```
 
 
@@ -59,8 +65,8 @@ dim(data.test)
 
 ```{r}
 logis = glm(as.factor(num)~age+sex+cp+trestbps+chol+fbs+restecg+thalach+exang+oldpeak+slope+ca+thal, data=data.train, family = "binomial")
-
-#summary(logis)
+logis
+summary(logis)
 
 logis.pred = predict(logis, data.test, type="response")
 logis.pred = as.data.frame(logis.pred)
@@ -73,12 +79,18 @@ logis.testingerror = 1-logis.accuracy
 
 paste("Accuracy of Logistic Regression is :", logis.accuracy)
 paste("Testing Error of Logistic Regression is :", logis.testingerror)
+
+
+logis.two = glm(as.factor(num)~sex+cp+trestbps+fbs+thalach+exang+slope+ca, data=data.train, family = "binomial")
+logis.two
 ```
 
 
 ```{r}
-random = randomForest(as.factor(num)~age+sex+cp+trestbps+chol+fbs+restecg+thalach+exang+oldpeak+slope+ca+thal, data=data.test, importance=TRUE)
 
+random = randomForest(as.factor(num)~age+sex+cp+trestbps+chol+fbs+restecg+thalach+exang+oldpeak+slope+ca+thal,data=data.train, importance=TRUE, mtry = 3, ntree=500)
+
+summary(random)
 #importance(random, type=1)
 #importance(random, type=2)
 varImpPlot(random)
@@ -93,18 +105,41 @@ random.pred = predict(random, data.test, type="class")
 random.confusion = confusionMatrix(as.factor(random.pred), as.factor(data.test$num))
 random.confusion
 
+
 ```
 
 
 ```{r}
+# random forest with 5 folds cv
+repeat_cv = trainControl(method='repeatedcv', number=5, repeats=3)
+
+forest = train(as.factor(num)~age+sex+cp+trestbps+chol+fbs+restecg+thalach+exang+oldpeak+slope+ca+thal, data=data.train, method='rf', trControl=repeat_cv,metric='Accuracy')
+
+forest.confusion = forest$finalModel$confusion
+
+forest.accuracy = sum(diag(forest.confusion))/sum(forest.confusion)
+forest.testingerror = 1-forest.accuracy
+
+paste("Accuracy of random forest with 5 folds cv is: ", forest.accuracy)
+paste("Testing Error of random forest with 5 folds cv is: ", forest.testingerror)
+
+```
+
+
+
+
+
+
+
+```{r}
 boost = suppressWarnings(gbm(
-  as.factor(num)~age+sex+cp+trestbps+chol+fbs+restecg+thalach+exang+oldpeak+slope+as.integer(ca)+as.integer(thal), 
+  as.factor(num)~age+sex+cp+trestbps+chol+fbs+restecg+thalach+exang+oldpeak+slope+ca+thal, 
   data = data.train,
   distribution = "gaussian",
+  cv.folds = 10,
   n.trees = 500,
   interaction.depth = 3,
-  shrinkage = 0.05,
-  n.minobsinnode = 2
+  shrinkage = 0.1
 ))
 
 summary(boost)
@@ -124,6 +159,9 @@ paste("Testing Error of boosting is: ", boost.testingerror)
 ```
 
 
+```{r}
+
+```
 
 
 

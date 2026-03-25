@@ -1,0 +1,185 @@
+---
+title: "DataMining--Project"
+author: "Bo"
+date: "2026-03-24"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r cars}
+# split dataset into training and testing
+library(caTools)
+
+# set up baseline regression: logistic regression. 
+library(dplyr)
+
+# both packages are for multinomial logistic regression
+library(VGAM)
+
+# package for neural network algorithm
+library(nnet)
+
+# Splitting data into training and testing
+library(caTools)
+
+# package for random forest algorithm 
+library(randomForest)
+
+# package for adaboosting algorithm
+library(adabag)
+
+# package for cross validation
+library(caret)
+
+```
+
+
+```{r pressure, echo=FALSE}
+data = read.csv("processed.csv", header = TRUE)
+
+data$ca = as.factor(data$ca)
+data$thal = as.factor(data$thal)
+data$num = as.factor(data$num)
+data$sex = as.factor(data$sex)
+data$cp = as.factor(data$cp)
+data$restecg = as.factor(data$restecg)
+data$fbs = as.factor(data$fbs)
+data$exang = as.factor(data$exang)
+data$slope = as.factor(data$slope)
+```
+
+
+```{r}
+dim(data)
+str(data)
+```
+
+```{r}
+# to check ca and thal levels since there is special character in it. 
+unique(data$ca)
+unique(data$thal)
+```
+
+
+```{r}
+# Find column names where "?" exists
+cols_with_question_mark = names(data)[colSums(data == "?", na.rm = TRUE) > 0]
+
+# Print the names of the columns
+print(cols_with_question_mark)
+```
+
+
+
+
+```{r}
+# to check the full dataset, especially the dependent variable
+#View(data)
+```
+
+
+```{r}
+# check if there is missing values of any features.
+#sum(is.na(data))
+
+```
+
+
+```{r}
+#multinomial logistic regression using vgam package
+logistic = vglm(as.f)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

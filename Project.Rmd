@@ -35,17 +35,82 @@ library(adabag)
 # package for cross validation
 library(caret)
 
+library(ggplot2)
+
+#REF variable selection
+library(caret)
+
+# check correlation and plot it 
+library(corrplot)
+
+# for data manipulation
+library(tidyverse)
+
 ```
 
 
-```{r pressure, echo=FALSE}
+```{r}
+numeric.data = read.csv("processed.csv", header = TRUE)
 data = read.csv("processed.csv", header = TRUE)
+```
 
+
+```{r}
+# Find column names where "?" exists
+question.mark = names(data)[colSums(data == "?", na.rm = TRUE) > 0]
+print(question.mark)
+
+# to check ca and thal levels since there is special character in it. 
+unique(data$ca)
+unique(data$thal)
+```
+
+
+```{r}
+# find out which row contains special characters
+which(grepl("\\?", data$ca))
+which(grepl("\\?", data$thal))
+```
+
+
+```{r}
+removed.row = c(167, 193, 288, 303, 88, 267)
+```
+
+
+```{r}
+numeric.data = numeric.data[-removed.row, ]
+numeric.data$age = as.numeric(numeric.data$age)
+numeric.data$sex = as.numeric(numeric.data$sex)
+numeric.data$cp = as.numeric(numeric.data$cp)
+numeric.data$trestbps = as.numeric(numeric.data$trestbps)
+numeric.data$chol = as.numeric(numeric.data$chol)
+numeric.data$fbs = as.numeric(numeric.data$fbs)
+numeric.data$restecg = as.numeric(numeric.data$restecg)
+numeric.data$thalach = as.numeric(numeric.data$thalach)
+numeric.data$exang = as.numeric(numeric.data$exang)
+numeric.data$oldpeak = as.numeric(numeric.data$oldpeak)
+numeric.data$slope = as.numeric(numeric.data$slope)
+numeric.data$ca = as.numeric(numeric.data$ca)
+numeric.data$thal = as.numeric(numeric.data$thal)
+```
+
+
+```{r}
+correlations=cor(numeric.data)
+corrplot(correlations, method="circle")
+```
+
+
+
+```{r pressure, echo=FALSE}
+data$num = ifelse(data$num == 0, 0, 1)
 data$ca = as.factor(data$ca)
 data$thal = as.factor(data$thal)
 data$num = as.factor(data$num)
 data$sex = as.factor(data$sex)
 data$cp = as.factor(data$cp)
+data$fbs = as.factor(data$fbs)
 data$restecg = as.factor(data$restecg)
 data$fbs = as.factor(data$fbs)
 data$exang = as.factor(data$exang)
@@ -54,66 +119,176 @@ data$slope = as.factor(data$slope)
 
 
 ```{r}
-dim(data)
-str(data)
-```
-
-```{r}
-# to check ca and thal levels since there is special character in it. 
-unique(data$ca)
-unique(data$thal)
+file = data[-removed.row, ]
+dim(file)
 ```
 
 
 ```{r}
-# Find column names where "?" exists
-cols_with_question_mark = names(data)[colSums(data == "?", na.rm = TRUE) > 0]
-
-# Print the names of the columns
-print(cols_with_question_mark)
+# since the unit of each column is different, they need a normalization.
+normalization = function(x){
+  z = (x-min(x))/(max(x) - min(x))
+}
 ```
-
 
 
 
 ```{r}
-# to check the full dataset, especially the dependent variable
-#View(data)
+file[, c("age", "trestbps", "chol", "thalach", "oldpeak")] = as.data.frame(lapply(file[, c("age", "trestbps", "chol", "thalach", "oldpeak")], normalization))
+
+str(file)
 ```
 
 
 ```{r}
-# check if there is missing values of any features.
-#sum(is.na(data))
-
+split = sample.split(file, SplitRatio = 0.8)
+train = subset(file, split == "TRUE")
+test = subset(file, split == "FALSE")
+dim(train)
 ```
+
+```{r}
+train%>%ggplot(aes(num)) + geom_bar() + labs(x="Num", y="Absolute Frequency")
+```
+
 
 
 ```{r}
 #multinomial logistic regression using vgam package
-logistic = vglm(as.f)
+logistic = glm(num~., data=train, family = "binomial")
+summary(logistic)
+logistic.pred = predict(logistic, newdata=test, type="response")
+logis.pred = ifelse(logistic.pred >= 0.5, 1, 0)
+logis.confusion = confusionMatrix(test$num, as.factor(logis.pred))
+logis.accuracy = logis.confusion$overall[1]
+logis.accuracy
+```
+
+
+```{r}
+random = randomForest(num~.,data=train, importance=TRUE, mtry = 10, ntree=500)
+
+varImpPlot(random)
+
+random.pred = predict(random, test, type="class")
+
+random.confusion = confusionMatrix(as.factor(random.pred), test$num)
+random.confusion
+
+```
+
+
+```{r}
+# random forest with 10 folds cv
+repeat_cv = trainControl(method='repeatedcv', number=10, repeats=3)
+
+tenfold.forest = train(num~., data=train, method='rf', trControl=repeat_cv, metric='Accuracy')
+
+tenfold.forest.pred = predict(tenfold.forest, newdata=test)
+
+forest.confusion = table(tenfold.forest.pred, test$num )
+
+forest.accuracy = sum(diag(forest.confusion))/sum(forest.confusion)
+forest.accuracy
 ```
 
 
 
+```{r}
+# ada boosting 
+ada.boost = boosting(num~., data = train, mfinal = 10, boos = TRUE)
+ada.pred = predict(ada.boost, newdata= test)
+
+ada.confusion= table(ada.pred$class, test$num)
+ada.accuracy = sum(diag(ada.confusion)) / sum(ada.confusion)
+ada.accuracy
+```
 
 
 
+```{r}
+# Specify RFE control parameters with naive Bayes function
+naive.ctrl = suppressWarnings(rfeControl(functions = nbFuncs, method = "cv", number = 10) ) 
+
+# Perform RFE
+naive.rfe = suppressWarnings(rfe(file[, -14], file[, 14], sizes = c(1:13), rfeControl = ctrl) ) 
+
+# Print RFE results
+print(naive.rfe)
+```
+
+
+```{r}
+# Specify RFE control parameters with random forest function
+forest.ctrl = suppressWarnings(rfeControl(functions = rfFuncs, method = "cv", number = 10) ) 
+
+# Perform RFE
+forest.rfe = suppressWarnings(rfe(file[, -14], file[, 14], sizes = c(1:13), rfeControl = ctrl) ) 
+
+# Print RFE results
+print(forest.rfe)
+```
+
+
+```{r}
+# Specify RFE control parameters with linear regression function
+linear.ctrl = suppressWarnings(rfeControl(functions = lmFuncs, method = "cv", number = 10) ) 
+
+# Perform RFE
+linear.rfe = suppressWarnings(rfe(file[, -14], file[, 14], sizes = c(1:13), rfeControl = ctrl) ) 
+
+# Print RFE results
+print(linear.rfe)
+```
 
 
 
+```{r}
+# Specify RFE control parameters with bagged  trees function
+treebag.ctrl = suppressWarnings(rfeControl(functions = treebagFuncs, method = "cv", number = 10) ) 
+
+# Perform RFE
+treebag.rfe = suppressWarnings(rfe(file[, -14], file[, 14], sizes = c(1:13), rfeControl = ctrl) ) 
+
+# Print RFE results
+print(treebag.rfe)
+```
 
 
+```{r}
+logistic.two = glm(num~thal+ca+cp+thalach+oldpeak, data=train, family = "binomial")
+summary(logistic.two)
+logistic.pred.two = predict(logistic.two, newdata=test, type="response")
+logis.pred.two = ifelse(logistic.pred.two >= 0.5, 1, 0)
+logis.confusion.two = confusionMatrix(test$num, as.factor(logis.pred.two))
+logis.accuracy.two = logis.confusion.two$overall[1]
+logis.accuracy.two
+```
 
 
+```{r}
+repeat_cv = trainControl(method='repeatedcv', number=10, repeats=3)
+
+tenfold.forest.two = train(num~thal+ca+cp+thalach+oldpeak, data=train, method='rf', trControl=repeat_cv, metric='Accuracy')
+
+tenfold.forest.pred.two = predict(tenfold.forest.two, newdata=test)
+
+forest.confusion.two = table(tenfold.forest.pred.two, test$num )
+
+forest.accuracy.two = sum(diag(forest.confusion.two))/sum(forest.confusion.two)
+forest.accuracy.two
+```
 
 
+```{r}
+# ada boosting 
+ada.boost.two = boosting(num~thal+ca+cp+thalach+oldpeak, data = train, mfinal = 10, boos = TRUE)
+ada.pred.two = predict(ada.boost.two, newdata= test)
 
-
-
-
-
-
+ada.confusion.two= table(ada.pred.two$class, test$num)
+ada.accuracy.two = sum(diag(ada.confusion.two)) / sum(ada.confusion.two)
+ada.accuracy.two
+```
 
 
 

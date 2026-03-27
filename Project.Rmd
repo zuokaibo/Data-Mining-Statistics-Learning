@@ -13,39 +13,27 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r cars}
 # split dataset into training and testing
 library(caTools)
-
 # set up baseline regression: logistic regression. 
 library(dplyr)
-
 # both packages are for multinomial logistic regression
 library(VGAM)
-
 # package for neural network algorithm
 library(nnet)
-
 # Splitting data into training and testing
 library(caTools)
-
 # package for random forest algorithm 
 library(randomForest)
-
 # package for adaboosting algorithm
 library(adabag)
-
 # package for cross validation
 library(caret)
-
 library(ggplot2)
-
 #REF variable selection
 library(caret)
-
 # check correlation and plot it 
 library(corrplot)
-
 # for data manipulation
 library(tidyverse)
-
 ```
 
 
@@ -59,19 +47,16 @@ data = read.csv("processed.csv", header = TRUE)
 # Find column names where "?" exists
 question.mark = names(data)[colSums(data == "?", na.rm = TRUE) > 0]
 print(question.mark)
-
 # to check ca and thal levels since there is special character in it. 
 unique(data$ca)
 unique(data$thal)
 ```
-
 
 ```{r}
 # find out which row contains special characters
 which(grepl("\\?", data$ca))
 which(grepl("\\?", data$thal))
 ```
-
 
 ```{r}
 removed.row = c(167, 193, 288, 303, 88, 267)
@@ -100,7 +85,6 @@ numeric.data$thal = as.numeric(numeric.data$thal)
 correlations=cor(numeric.data)
 corrplot(correlations, method="circle")
 ```
-
 
 
 ```{r pressure, echo=FALSE}
@@ -135,8 +119,6 @@ normalization = function(x){
 
 ```{r}
 file[, c("age", "trestbps", "chol", "thalach", "oldpeak")] = as.data.frame(lapply(file[, c("age", "trestbps", "chol", "thalach", "oldpeak")], normalization))
-
-str(file)
 ```
 
 
@@ -211,7 +193,7 @@ ada.accuracy
 naive.ctrl = suppressWarnings(rfeControl(functions = nbFuncs, method = "cv", number = 10) ) 
 
 # Perform RFE
-naive.rfe = suppressWarnings(rfe(file[, -14], file[, 14], sizes = c(1:13), rfeControl = ctrl) ) 
+naive.rfe = suppressWarnings(rfe(file[, -14], file[, 14], sizes = c(1:13), rfeControl = naive.ctrl) ) 
 
 # Print RFE results
 print(naive.rfe)
@@ -223,7 +205,7 @@ print(naive.rfe)
 forest.ctrl = suppressWarnings(rfeControl(functions = rfFuncs, method = "cv", number = 10) ) 
 
 # Perform RFE
-forest.rfe = suppressWarnings(rfe(file[, -14], file[, 14], sizes = c(1:13), rfeControl = ctrl) ) 
+forest.rfe = suppressWarnings(rfe(file[, -14], file[, 14], sizes = c(1:13), rfeControl = forest.ctrl) ) 
 
 # Print RFE results
 print(forest.rfe)
@@ -231,14 +213,31 @@ print(forest.rfe)
 
 
 ```{r}
+packageVersion("caret")
+```
+
+
+
+```{r}
 # Specify RFE control parameters with linear regression function
-linear.ctrl = suppressWarnings(rfeControl(functions = lmFuncs, method = "cv", number = 10) ) 
+logistic.ctrl = suppressWarnings(rfeControl(functions = lrFuncs, method = "cv", number = 10) ) 
 
 # Perform RFE
-linear.rfe = suppressWarnings(rfe(file[, -14], file[, 14], sizes = c(1:13), rfeControl = ctrl) ) 
+logistic.rfe = suppressWarnings(rfe(num~., data=train, sizes = c(1:13), rfeControl=logistic.ctrl) )
 
 # Print RFE results
 print(linear.rfe)
+```
+
+
+
+```{r}
+# linear discriminant analysis on RFE
+lda.ctrl = suppressWarnings(rfeControl(functions = ldaFuncs, method = "cv", number = 10) ) 
+# Perform RFE
+lda.rfe = suppressWarnings(rfe(num~., data=train, sizes = c(1:13), rfeControl=lda.ctrl) )
+# Print RFE results
+print(lda.rfe)
 ```
 
 
@@ -248,7 +247,7 @@ print(linear.rfe)
 treebag.ctrl = suppressWarnings(rfeControl(functions = treebagFuncs, method = "cv", number = 10) ) 
 
 # Perform RFE
-treebag.rfe = suppressWarnings(rfe(file[, -14], file[, 14], sizes = c(1:13), rfeControl = ctrl) ) 
+treebag.rfe = suppressWarnings(rfe(file[, -14], file[, 14], sizes = c(1:13), rfeControl = treebag.ctrl) ) 
 
 # Print RFE results
 print(treebag.rfe)

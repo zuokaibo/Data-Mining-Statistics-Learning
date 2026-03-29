@@ -82,8 +82,9 @@ numeric.data$thal = as.numeric(numeric.data$thal)
 
 
 ```{r}
-correlations=cor(numeric.data)
-corrplot(correlations, method="circle")
+correlations=cor(numeric.data[,-14])
+corrplot(correlations, method="number", number.cex= 8/ncol(numeric.data))
+
 ```
 
 
@@ -111,7 +112,7 @@ dim(file)
 ```{r}
 # since the unit of each column is different, they need a normalization.
 normalization = function(x){
-  z = (x-min(x))/(max(x) - min(x))
+  z = (x-mean(x))/(sd(x))
 }
 ```
 
@@ -163,13 +164,10 @@ random.confusion
 ```{r}
 # random forest with 10 folds cv
 repeat_cv = trainControl(method='repeatedcv', number=10, repeats=3)
-
 tenfold.forest = train(num~., data=train, method='rf', trControl=repeat_cv, metric='Accuracy')
-
+tenfold.forest
 tenfold.forest.pred = predict(tenfold.forest, newdata=test)
-
 forest.confusion = table(tenfold.forest.pred, test$num )
-
 forest.accuracy = sum(diag(forest.confusion))/sum(forest.confusion)
 forest.accuracy
 ```
@@ -180,7 +178,6 @@ forest.accuracy
 # ada boosting 
 ada.boost = boosting(num~., data = train, mfinal = 10, boos = TRUE)
 ada.pred = predict(ada.boost, newdata= test)
-
 ada.confusion= table(ada.pred$class, test$num)
 ada.accuracy = sum(diag(ada.confusion)) / sum(ada.confusion)
 ada.accuracy
@@ -203,30 +200,23 @@ print(naive.rfe)
 ```{r}
 # Specify RFE control parameters with random forest function
 forest.ctrl = suppressWarnings(rfeControl(functions = rfFuncs, method = "cv", number = 10) ) 
-
 # Perform RFE
 forest.rfe = suppressWarnings(rfe(file[, -14], file[, 14], sizes = c(1:13), rfeControl = forest.ctrl) ) 
-
 # Print RFE results
 print(forest.rfe)
 ```
 
 
-```{r}
-packageVersion("caret")
-```
-
-
 
 ```{r}
-# Specify RFE control parameters with linear regression function
+# Specify RFE control parameters with logistic regression function
 logistic.ctrl = suppressWarnings(rfeControl(functions = lrFuncs, method = "cv", number = 10) ) 
 
 # Perform RFE
 logistic.rfe = suppressWarnings(rfe(num~., data=train, sizes = c(1:13), rfeControl=logistic.ctrl) )
 
 # Print RFE results
-print(linear.rfe)
+print(logistic.rfe)
 ```
 
 
@@ -255,8 +245,7 @@ print(treebag.rfe)
 
 
 ```{r}
-logistic.two = glm(num~thal+ca+cp+thalach+oldpeak, data=train, family = "binomial")
-summary(logistic.two)
+logistic.two = glm(num~slope+cp+thal+ca, data=train, family = "binomial")
 logistic.pred.two = predict(logistic.two, newdata=test, type="response")
 logis.pred.two = ifelse(logistic.pred.two >= 0.5, 1, 0)
 logis.confusion.two = confusionMatrix(test$num, as.factor(logis.pred.two))
@@ -268,7 +257,7 @@ logis.accuracy.two
 ```{r}
 repeat_cv = trainControl(method='repeatedcv', number=10, repeats=3)
 
-tenfold.forest.two = train(num~thal+ca+cp+thalach+oldpeak, data=train, method='rf', trControl=repeat_cv, metric='Accuracy')
+tenfold.forest.two = train(num~thal+ca+cp+oldpeak+sex, data=train, method='rf', trControl=repeat_cv, metric='Accuracy')
 
 tenfold.forest.pred.two = predict(tenfold.forest.two, newdata=test)
 

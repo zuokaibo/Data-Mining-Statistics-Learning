@@ -41,6 +41,8 @@ library(car)
 library(FactoMineR)
 library(factoextra)
 
+# gradient boosting
+library(gbm)
 ```
 
 
@@ -179,19 +181,12 @@ plot(logistic, which = 4)
 ```
 
 
-
-
-
 ```{r}
 random = randomForest(num~.,data=train, importance=TRUE, mtry = 10, ntree=500)
-
 varImpPlot(random)
-
 random.pred = predict(random, test, type="class")
-
 random.confusion = confusionMatrix(as.factor(random.pred), test$num)
 random.confusion
-
 ```
 
 
@@ -199,7 +194,6 @@ random.confusion
 # random forest with 10 folds cv
 repeat_cv = trainControl(method='repeatedcv', number=10, repeats=3)
 tenfold.forest = train(num~., data=train, method='rf', trControl=repeat_cv, metric='Accuracy')
-tenfold.forest
 tenfold.forest.pred = predict(tenfold.forest, newdata=test)
 forest.confusion = table(tenfold.forest.pred, test$num )
 forest.accuracy = sum(diag(forest.confusion))/sum(forest.confusion)
@@ -209,25 +203,25 @@ forest.accuracy
 
 
 ```{r}
-# ada boosting 
-ada.boost = boosting(num~., data = train, mfinal = 10, boos = TRUE)
-ada.pred = predict(ada.boost, newdata= test)
-ada.confusion= table(ada.pred$class, test$num)
-ada.accuracy = sum(diag(ada.confusion)) / sum(ada.confusion)
-ada.accuracy
+# gradient boosting 
+gra.boost = boosting(num~., data = train, mfinal = 10, boos = TRUE)
+gra.pred = predict(gra.boost, newdata= test)
+gra.confusion= table(gra.pred$class, test$num)
+gra.accuracy = sum(diag(gra.confusion)) / sum(gra.confusion)
+gra.accuracy
 ```
 
 
 
 ```{r}
 # Specify RFE control parameters with naive Bayes function
-naive.ctrl = suppressWarnings(rfeControl(functions = nbFuncs, method = "cv", number = 10) ) 
+#naive.ctrl = suppressWarnings(rfeControl(functions = nbFuncs, method = "cv", number = 10) ) 
 
 # Perform RFE
-naive.rfe = suppressWarnings(rfe(file[, -14], file[, 14], sizes = c(1:13), rfeControl = naive.ctrl) ) 
+#naive.rfe = suppressWarnings(rfe(file[, -14], file[, 14], sizes = c(1:13), rfeControl = naive.ctrl) ) 
 
 # Print RFE results
-print(naive.rfe)
+#print(naive.rfe)
 ```
 
 
@@ -241,29 +235,58 @@ print(forest.rfe)
 ```
 
 
+```{r}
+random.two = randomForest(num~ca+thal+cp+oldpeak+sex,data=train, importance=TRUE, mtry = 10, ntree=500)
+varImpPlot(random.two)
+random.pred.two = predict(random.two, test, type="class")
+random.confusion.two = confusionMatrix(as.factor(random.pred.two), test$num)
+random.confusion.two
+```
+
+
 
 ```{r}
 # Specify RFE control parameters with logistic regression function
 logistic.ctrl = suppressWarnings(rfeControl(functions = lrFuncs, method = "cv", number = 10) ) 
 
 # Perform RFE
-logistic.rfe = suppressWarnings(rfe(num~., data=train, sizes = c(1:13), rfeControl=logistic.ctrl) )
+logistic.rfe = suppressWarnings(rfe(num~., data=train, sizes = c(1:12), rfeControl=logistic.ctrl) )
 
 # Print RFE results
 print(logistic.rfe)
 ```
 
 
-
 ```{r}
-# linear discriminant analysis on RFE
-lda.ctrl = suppressWarnings(rfeControl(functions = ldaFuncs, method = "cv", number = 10) ) 
-# Perform RFE
-lda.rfe = suppressWarnings(rfe(num~., data=train, sizes = c(1:13), rfeControl=lda.ctrl) )
-# Print RFE results
-print(lda.rfe)
+# logistc after RFE
+logistic.three = glm(num~+thal+slope+sex+ca, data=train, family = "binomial")
+summary(logistic.three)
+logistic.pred.three = predict(logistic.three, newdata=test, type="response")
+logis.pred.three = ifelse(logistic.pred.three >= 0.5, 1, 0)
+logis.confusion.three = confusionMatrix(test$num, as.factor(logis.pred.three))
+logis.accuracy.three = logis.confusion$overall[1]
+logis.accuracy.three
 ```
 
+
+```{r}
+car::vif(logistic.three)
+```
+
+
+```{r}
+# logistic with P value seletion from full logistic regression model at beginning
+logistic.two = glm(num~age+sex+ca+trestbps+chol+fbs+restecg+thalach+exang+oldpeak+slope+thal, data=train, family = "binomial")
+logistic.pred.two = predict(logistic.two, newdata=test, type="response")
+logis.pred.two = ifelse(logistic.pred.two >= 0.5, 1, 0)
+logis.confusion.two = confusionMatrix(test$num, as.factor(logis.pred.two))
+logis.accuracy.two = logis.confusion.two$overall[1]
+logis.accuracy.two
+```
+
+```{r}
+car::vif(logistic.two)
+```
 
 
 ```{r}
@@ -279,19 +302,9 @@ print(treebag.rfe)
 
 
 ```{r}
-logistic.two = glm(num~slope+cp+thal+ca, data=train, family = "binomial")
-logistic.pred.two = predict(logistic.two, newdata=test, type="response")
-logis.pred.two = ifelse(logistic.pred.two >= 0.5, 1, 0)
-logis.confusion.two = confusionMatrix(test$num, as.factor(logis.pred.two))
-logis.accuracy.two = logis.confusion.two$overall[1]
-logis.accuracy.two
-```
-
-
-```{r}
 repeat_cv = trainControl(method='repeatedcv', number=10, repeats=3)
 
-tenfold.forest.two = train(num~thal+ca+cp+oldpeak+sex, data=train, method='rf', trControl=repeat_cv, metric='Accuracy')
+tenfold.forest.two = train(num~thalach+ca+cp+thal+oldpeak, data=train, method='rf', trControl=repeat_cv, metric='Accuracy')
 
 tenfold.forest.pred.two = predict(tenfold.forest.two, newdata=test)
 
@@ -303,16 +316,19 @@ forest.accuracy.two
 
 
 ```{r}
-# ada boosting 
-ada.boost.two = boosting(num~thal+ca+cp+thalach+oldpeak, data = train, mfinal = 10, boos = TRUE)
-ada.pred.two = predict(ada.boost.two, newdata= test)
+# gradient boosting 
+gra.boost.two = boosting(num~thalach+ca+cp+thal+oldpeak, data = train, mfinal = 10, boos = TRUE)
+gra.pred.two = predict(gra.boost.two, newdata= test)
 
-ada.confusion.two= table(ada.pred.two$class, test$num)
-ada.accuracy.two = sum(diag(ada.confusion.two)) / sum(ada.confusion.two)
-ada.accuracy.two
+gra.confusion.two= table(gra.pred.two$class, test$num)
+gra.accuracy.two = sum(diag(gra.confusion.two)) / sum(gra.confusion.two)
+gra.accuracy.two
 ```
 
+```{r}
 
+
+```
 
 
 

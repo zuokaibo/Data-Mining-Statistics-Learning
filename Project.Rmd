@@ -34,6 +34,13 @@ library(caret)
 library(corrplot)
 # for data manipulation
 library(tidyverse)
+# multicollinearity checking VIF
+library(car)
+# implement PCA. but since pca only work on numerical data, so we need another replacement that 
+# can work on mixed datatype
+library(FactoMineR)
+library(factoextra)
+
 ```
 
 
@@ -146,6 +153,33 @@ logis.confusion = confusionMatrix(test$num, as.factor(logis.pred))
 logis.accuracy = logis.confusion$overall[1]
 logis.accuracy
 ```
+
+```{r}
+# Multicollinearity checking, here need to use car:: even car is loaded by library()
+vif.result = car::vif(logistic)
+vif.result
+```
+
+
+```{r}
+# FAMD is same like pca,but famd can work on mixed datatype, pca only works on numerical data
+famd = FAMD(train, sup.var = 14, graph= FALSE, ncp=25)
+get_eigenvalue(famd)
+```
+
+
+```{r}
+# check outliers
+cooks.distance(logistic)[which.max(cooks.distance(logistic))]
+```
+
+
+```{r}
+plot(logistic, which = 4)
+```
+
+
+
 
 
 ```{r}

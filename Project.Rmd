@@ -46,6 +46,8 @@ library(gbm)
 library(lmtest)
 # stacking model
 library(h2o)
+#checking auc score
+library(pROC)
 
 ```
 
@@ -282,6 +284,12 @@ random.confusion.two
 ```
 
 
+```{r}
+rf.auc = auc(test$num, as.numeric(random.pred.two))
+rf.auc
+```
+
+
 
 ```{r}
 # Specify RFE control parameters with logistic regression function
@@ -304,6 +312,12 @@ logis.pred.three = ifelse(logistic.pred.three >= 0.5, 1, 0)
 logis.confusion.three = confusionMatrix(test$num, as.factor(logis.pred.three))
 logis.accuracy.three = logis.confusion$overall[1]
 logis.accuracy.three
+```
+
+
+```{r}
+log.auc = auc(test$num, logis.pred.three)
+log.auc
 ```
 
 
@@ -346,6 +360,12 @@ gra.pred.two = predict(gra.boost.two, newdata= test)
 gra.confusion.two= table(gra.pred.two$class, test$num)
 gra.accuracy.two = sum(diag(gra.confusion.two)) / sum(gra.confusion.two)
 gra.accuracy.two
+```
+
+
+```{r}
+gra.auc = auc(test$num, as.numeric(gra.pred.two$class))
+gra.auc
 ```
 
 
@@ -394,6 +414,7 @@ rf = h2o.randomForest(
   keep_cross_validation_predictions = TRUE,
   seed = 5
   )
+summary
 ```
 
 

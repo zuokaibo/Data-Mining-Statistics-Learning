@@ -40,9 +40,13 @@ library(car)
 # can work on mixed datatype
 library(FactoMineR)
 library(factoextra)
-
 # gradient boosting
 library(gbm)
+#for Durbin-Watson test to check autocorrelation among features.
+library(lmtest)
+# stacking model
+library(h2o)
+
 ```
 
 
@@ -87,6 +91,8 @@ numeric.data$oldpeak = as.numeric(numeric.data$oldpeak)
 numeric.data$slope = as.numeric(numeric.data$slope)
 numeric.data$ca = as.numeric(numeric.data$ca)
 numeric.data$thal = as.numeric(numeric.data$thal)
+numeric.data$num = ifelse(numeric.data$num == 0, 0, 1)
+numeric.data$num = as.numeric(numeric.data$num)
 ```
 
 
@@ -113,6 +119,34 @@ data$slope = as.factor(data$slope)
 
 
 ```{r}
+plot(data$trestbps, data$num, xlab="trestbps", ylab="num")
+lines(smooth.spline(data$num~data$trestbps, df=4))
+```
+
+
+
+```{r}
+plot(data$chol, data$num, xlab="chol", ylab="num")
+lines(smooth.spline(data$num~data$chol, df=4))
+```
+
+
+```{r}
+plot(data$thalach, data$num, xlab="thalach", ylab="num")
+lines(smooth.spline(data$num~data$thalach, df=5))
+```
+
+
+
+```{r}
+plot(data$oldpeak, data$num, xlab="oldpeak", ylab="num")
+lines(smooth.spline(data$num~data$oldpeak, df=5))
+```
+
+
+
+
+```{r}
 file = data[-removed.row, ]
 dim(file)
 ```
@@ -133,22 +167,35 @@ file[, c("age", "trestbps", "chol", "thalach", "oldpeak")] = as.data.frame(lappl
 
 
 ```{r}
-split = sample.split(file, SplitRatio = 0.8)
-train = subset(file, split == "TRUE")
-test = subset(file, split == "FALSE")
-dim(train)
+split.dataset = c(train = .8, test = .2)
+
+proportion = sample(
+  cut(seq(nrow(file)), nrow(file)*cumsum(c(0,split.dataset)),labels = names(split.dataset))
+)
+
+train.test = split(file, proportion)
 ```
 
 ```{r}
-train%>%ggplot(aes(num)) + geom_bar() + labs(x="Num", y="Absolute Frequency")
+train = as.data.frame(train.test$train)
+dim(train)
+
+test = as.data.frame(train.test$test)
+dim(test)
+
 ```
 
+
+```{r}
+train %>% ggplot(aes(num)) + geom_bar() + labs(x="Num", y="Absolute Frequency")
+```
 
 
 ```{r}
 #multinomial logistic regression using vgam package
-logistic = glm(num~., data=train, family = "binomial")
-summary(logistic)
+
+logistic = glm(num~age+sex+cp+trestbps+chol+I(chol^2)+fbs+restecg+thalach+exang+oldpeak+slope+I(oldpeak^2)+ca+thal, data=train, family = "binomial")
+#summary(logistic)
 logistic.pred = predict(logistic, newdata=test, type="response")
 logis.pred = ifelse(logistic.pred >= 0.5, 1, 0)
 logis.confusion = confusionMatrix(test$num, as.factor(logis.pred))
@@ -182,6 +229,13 @@ plot(logistic, which = 4)
 
 
 ```{r}
+#checking autocorrelation among features 
+dw.test = dwtest(logistic)
+dw.test
+```
+
+
+```{r}
 random = randomForest(num~.,data=train, importance=TRUE, mtry = 10, ntree=500)
 varImpPlot(random)
 random.pred = predict(random, test, type="class")
@@ -201,7 +255,6 @@ forest.accuracy
 ```
 
 
-
 ```{r}
 # gradient boosting 
 gra.boost = boosting(num~., data = train, mfinal = 10, boos = TRUE)
@@ -209,19 +262,6 @@ gra.pred = predict(gra.boost, newdata= test)
 gra.confusion= table(gra.pred$class, test$num)
 gra.accuracy = sum(diag(gra.confusion)) / sum(gra.confusion)
 gra.accuracy
-```
-
-
-
-```{r}
-# Specify RFE control parameters with naive Bayes function
-#naive.ctrl = suppressWarnings(rfeControl(functions = nbFuncs, method = "cv", number = 10) ) 
-
-# Perform RFE
-#naive.rfe = suppressWarnings(rfe(file[, -14], file[, 14], sizes = c(1:13), rfeControl = naive.ctrl) ) 
-
-# Print RFE results
-#print(naive.rfe)
 ```
 
 
@@ -236,7 +276,7 @@ print(forest.rfe)
 
 
 ```{r}
-random.two = randomForest(num~ca+thal+cp+oldpeak+sex,data=train, importance=TRUE, mtry = 10, ntree=500)
+random.two = randomForest(num~ca+thal+cp,data=train, importance=TRUE, mtry = 10, ntree=500)
 varImpPlot(random.two)
 random.pred.two = predict(random.two, test, type="class")
 random.confusion.two = confusionMatrix(as.factor(random.pred.two), test$num)
@@ -259,7 +299,7 @@ print(logistic.rfe)
 
 ```{r}
 # logistc after RFE
-logistic.three = glm(num~+thal+slope+sex+ca, data=train, family = "binomial")
+logistic.three = glm(num~thal+trestbps+ca+sex, data=train, family = "binomial")
 summary(logistic.three)
 logistic.pred.three = predict(logistic.three, newdata=test, type="response")
 logis.pred.three = ifelse(logistic.pred.three >= 0.5, 1, 0)
@@ -271,21 +311,6 @@ logis.accuracy.three
 
 ```{r}
 car::vif(logistic.three)
-```
-
-
-```{r}
-# logistic with P value seletion from full logistic regression model at beginning
-logistic.two = glm(num~age+sex+ca+trestbps+chol+fbs+restecg+thalach+exang+oldpeak+slope+thal, data=train, family = "binomial")
-logistic.pred.two = predict(logistic.two, newdata=test, type="response")
-logis.pred.two = ifelse(logistic.pred.two >= 0.5, 1, 0)
-logis.confusion.two = confusionMatrix(test$num, as.factor(logis.pred.two))
-logis.accuracy.two = logis.confusion.two$overall[1]
-logis.accuracy.two
-```
-
-```{r}
-car::vif(logistic.two)
 ```
 
 
@@ -325,10 +350,12 @@ gra.accuracy.two = sum(diag(gra.confusion.two)) / sum(gra.confusion.two)
 gra.accuracy.two
 ```
 
+
 ```{r}
-
-
+# stacking models
+h2o.init()
 ```
+
 
 
 

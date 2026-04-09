@@ -144,8 +144,6 @@ lines(smooth.spline(data$num~data$oldpeak, df=5))
 ```
 
 
-
-
 ```{r}
 file = data[-removed.row, ]
 dim(file)
@@ -357,18 +355,97 @@ h2o.init()
 ```
 
 
+```{r}
+train.h2o=as.h2o(train)
+test.h2o=as.h2o(test)
+```
+```{r}
+#setting up dependent variable and independent variables
+y = "num"
+x = setdiff(names(train.h2o), y)
+```
+
+```{r}
+#setting up cross validation folds to generate level one data for stacking
+fold = 10
+```
 
 
+```{r}
+# generate a gbm 
+gbm = h2o.gbm(
+  x=x, 
+  y=y, 
+  training_frame=train.h2o, 
+  nfolds=fold, 
+  keep_cross_validation_predictions=TRUE, 
+  seed = 5
+  )
+```
 
 
+```{r}
+# generate a random forest
+rf = h2o.randomForest(
+  x = x,
+  y = y,
+  training_frame = train.h2o,
+  nfolds = fold,
+  keep_cross_validation_predictions = TRUE,
+  seed = 5
+  )
+```
 
 
+```{r}
+# generate a Logistic Regression
+features = c("thal","trestbps","ca","sex")
+lr = h2o.glm(x = features,
+             y = y,
+             training_frame = train.h2o,
+             family = c("binomial"),
+             nfolds = fold,
+             keep_cross_validation_predictions = TRUE,
+             seed = 5)
+```
 
 
+```{r}
+# Train a stacked random forest ensemble using gradient boosting, random forest and logistic regression 
+ensemble = h2o.stackedEnsemble(x = x,
+                                y = y,
+                                metalearner_algorithm="drf",
+                                training_frame = train.h2o,
+                                base_models = list(gbm, rf, lr))
+```
 
 
+```{r}
+# Eval ensemble performance on a test set
+performance = h2o.performance(ensemble, newdata = test.h2o)
+performance
+```
 
 
+```{r}
+# Compare to base learner performance on the test set
+performance.gbm = h2o.performance(gbm, newdata = test.h2o)
+performance.rf = h2o.performance(rf, newdata = test.h2o)
+perfformance.lr = h2o.performance(lr, newdata = test.h2o)
+baselearner.best.auc = max(h2o.auc(performance.gbm), h2o.auc(performance.rf), h2o.auc(perfformance.lr))
+ensemble.auc = h2o.auc(performance)
+print(sprintf("Best Base learner Test AUC:  %s", baselearner.best.auc))
+print(sprintf("Ensemble Test AUC:  %s", ensemble.auc))
+```
+
+```{r}
+auc.test = as.data.frame(rbind(
+  gbm.auc = h2o.auc(performance.gbm), 
+  rf.auc = h2o.auc(performance.rf), 
+  lr.auc = h2o.auc(perfformance.lr), 
+  emsemble.auc = ensemble.auc))
+auc.test
+```
 
 
 

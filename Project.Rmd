@@ -160,9 +160,17 @@ normalization = function(x){
 ```
 
 
+```{r}
+file$chol2 = (file$chol)^2
+file$oldpeak2 = (file$oldpeak)^2
+colnames(file)
+```
+
+
+
 
 ```{r}
-file[, c("age", "trestbps", "chol", "thalach", "oldpeak")] = as.data.frame(lapply(file[, c("age", "trestbps", "chol", "thalach", "oldpeak")], normalization))
+file[, c("age", "trestbps", "chol", "thalach", "oldpeak", "chol2", "oldpeak2")] = as.data.frame(lapply(file[, c("age", "trestbps", "chol", "thalach", "oldpeak", "chol2", "oldpeak2")], normalization))
 ```
 
 
@@ -185,6 +193,9 @@ test = as.data.frame(train.test$test)
 dim(test)
 
 ```
+
+
+
 
 
 ```{r}
@@ -256,12 +267,43 @@ forest.accuracy
 
 
 ```{r}
-# gradient boosting 
-gra.boost = boosting(num~., data = train, mfinal = 10, boos = TRUE)
-gra.pred = predict(gra.boost, newdata= test)
-gra.confusion= table(gra.pred$class, test$num)
-gra.accuracy = sum(diag(gra.confusion)) / sum(gra.confusion)
-gra.accuracy
+# ada boosting 
+ada.boost = boosting(num~., data = train, mfinal = 10, boos = TRUE)
+ada.pred = predict(ada.boost, newdata= test)
+ada.confusion= table(ada.pred$class, test$num)
+ada.accuracy = sum(diag(ada.confusion)) / sum(ada.confusion)
+ada.accuracy
+```
+
+
+```{r}
+gbm.boost = gbm(
+  formula = num~., 
+  data = train, 
+  distribution = "gaussian", 
+  n.trees = 5000, 
+  interaction.depth = 4, 
+  shrinkage = 0.1, 
+  cv.folds = 10
+)
+
+gbm.pred = predict(gbm.boost, newdata= test
+                   )
+gbm.pred = ifelse(gbm.pred >= 0.5, 1, 0)
+gbm.confusion= table(as.factor(gbm.pred), test$num)
+gbm.accuracy = sum(diag(gbm.confusion)) / sum(gbm.confusion)
+gbm.accuracy
+```
+
+
+```{r}
+library(xgboost)
+
+# Prepare data matrices
+train.matrix = as.matrix(train[,-14])
+test.matrix = as.matrix(test[,-14])
+train.label = train$num
+test.label = test$num
 ```
 
 
@@ -269,14 +311,14 @@ gra.accuracy
 # Specify RFE control parameters with random forest function
 forest.ctrl = suppressWarnings(rfeControl(functions = rfFuncs, method = "cv", number = 10) ) 
 # Perform RFE
-forest.rfe = suppressWarnings(rfe(file[, -14], file[, 14], sizes = c(1:13), rfeControl = forest.ctrl) ) 
+forest.rfe = suppressWarnings(rfe(train[, -14], train[, 14], sizes = c(1:13), rfeControl = forest.ctrl) ) 
 # Print RFE results
 print(forest.rfe)
 ```
 
 
 ```{r}
-random.two = randomForest(num~ca+thal+cp+oldpeak+sex,data=train, importance=TRUE, mtry = 10, ntree=500)
+random.two = randomForest(num~ca+thal+cp+oldpeak+exang,data=train, importance=TRUE, mtry = 10, ntree=500)
 varImpPlot(random.two)
 random.pred.two = predict(random.two, test, type="class")
 random.confusion.two = confusionMatrix(as.factor(random.pred.two), test$num)
@@ -291,18 +333,11 @@ rf.auc
 
 
 ```{r}
-train$chol2 = (train$chol)^2
-train$oldpeak2 = (train$oldpeak)^2
-colnames(train)
-```
-
-
-```{r}
 # Specify RFE control parameters with logistic regression function
 logistic.ctrl = suppressWarnings(rfeControl(functions = lrFuncs, method = "cv", number = 10) ) 
 
 # Perform RFE
-logistic.rfe = suppressWarnings(rfe(num~age+sex+cp+trestbps+chol+chol2+fbs+restecg+thalach+exang+oldpeak+slope+oldpeak2+ca+thal, data=train, sizes = c(1:14), rfeControl=logistic.ctrl) )
+logistic.rfe = suppressWarnings(rfe(num~., data=train, sizes = c(1:16), rfeControl=logistic.ctrl) )
 
 # Print RFE results
 print(logistic.rfe)
@@ -311,7 +346,7 @@ print(logistic.rfe)
 
 ```{r}
 # logistc after RFE
-logistic.three = glm(num~thal+slope+ca+sex, data=train, family = "binomial")
+logistic.three = glm(num~thal+slope+cp+trestbps, data=train, family = "binomial")
 summary(logistic.three)
 logistic.pred.three = predict(logistic.three, newdata=test, type="response")
 logis.pred.three = ifelse(logistic.pred.three >= 0.5, 1, 0)
@@ -337,7 +372,7 @@ car::vif(logistic.three)
 treebag.ctrl = suppressWarnings(rfeControl(functions = treebagFuncs, method = "cv", number = 10) ) 
 
 # Perform RFE
-treebag.rfe = suppressWarnings(rfe(train[, -14], train[, 14], sizes = c(1:13), rfeControl = treebag.ctrl) ) 
+treebag.rfe = suppressWarnings(rfe(train[, -14], train[, 14], sizes = c(1:16), rfeControl = treebag.ctrl) ) 
 
 # Print RFE results
 print(treebag.rfe)
@@ -347,7 +382,7 @@ print(treebag.rfe)
 ```{r}
 repeat_cv = trainControl(method='repeatedcv', number=10, repeats=3)
 
-tenfold.forest.two = train(num~+ca+cp+thal+oldpeak, data=train, method='rf', trControl=repeat_cv, metric='Accuracy')
+tenfold.forest.two = train(num~+ca+cp+thal+oldpeak+thalach, data=train, method='rf', trControl=repeat_cv, metric='Accuracy')
 
 tenfold.forest.pred.two = predict(tenfold.forest.two, newdata=test)
 
@@ -359,20 +394,46 @@ forest.accuracy.two
 
 
 ```{r}
-# gradient boosting 
-gra.boost.two = boosting(num~ca+cp+thal+oldpeak, data = train, mfinal = 10, boos = TRUE)
-gra.pred.two = predict(gra.boost.two, newdata= test)
+# ada boosting 
+ada.boost.two = boosting(num~ca+cp+thal+oldpeak+thalach, data = train, mfinal = 10, boos = TRUE)
+ada.pred.two = predict(ada.boost.two, newdata= test)
 
-gra.confusion.two= table(gra.pred.two$class, test$num)
-gra.accuracy.two = sum(diag(gra.confusion.two)) / sum(gra.confusion.two)
-gra.accuracy.two
+ada.confusion.two= table(ada.pred.two$class, test$num)
+ada.accuracy.two = sum(diag(ada.confusion.two)) / sum(ada.confusion.two)
+ada.accuracy.two
 ```
 
 
 ```{r}
-gra.auc = auc(test$num, as.numeric(gra.pred.two$class))
-gra.auc
+ada.auc = auc(test$num, as.numeric(ada.pred.two$class))
+ada.auc
 ```
+
+
+```{r}
+gbm.boost.two = gbm(
+  formula = num~ca+cp+thal+oldpeak+thalach, 
+  data = train, 
+  distribution = "gaussian", 
+  n.trees = 50, 
+  interaction.depth = 4, 
+  shrinkage = 0.1, 
+  cv.folds = 10
+)
+
+gbm.pred.two = predict(gbm.boost.two, newdata= test
+                   )
+gbm.pred.two = ifelse(gbm.pred.two >= 0.5, 1, 0)
+gbm.confusion.two = table(as.factor(gbm.pred.two), test$num)
+gbm.accuracy.two = sum(diag(gbm.confusion.two)) / sum(gbm.confusion.two)
+gbm.accuracy.two
+```
+
+
+```{r}
+gbm.auc = auc(test$num, as.numeric(gbm.pred.two))
+```
+
 
 
 ```{r}
@@ -400,7 +461,7 @@ fold = 10
 
 ```{r}
 # generate a gbm 
-gbm.features = c("ca","cp","thal","oldpeak")  
+gbm.features = c("ca","cp","thal","oldpeak", "thalach")  
 gbm = h2o.gbm(
   x=gbm.features, 
   y=y, 
@@ -414,7 +475,7 @@ gbm = h2o.gbm(
 
 ```{r}
 # generate a random forest
-rf.features = c("sex", "ca","cp","thal","oldpeak")
+rf.features = c("exang", "ca","cp","thal","oldpeak")  
 rf = h2o.randomForest(
   x = rf.features,
   y = y,
@@ -428,7 +489,7 @@ rf = h2o.randomForest(
 
 ```{r}
 # generate a Logistic Regression
-log.features = c("thal","slope","ca","sex", "exang" ) 
+log.features = c("thal","slope","cp","trestbps" ) 
 lr = h2o.glm(x = log.features,
              y = y,
              training_frame = train.h2o,
@@ -437,6 +498,7 @@ lr = h2o.glm(x = log.features,
              keep_cross_validation_predictions = TRUE,
              seed = 5)
 ```
+
 
 
 ```{r}
@@ -452,7 +514,6 @@ ensemble = h2o.stackedEnsemble(x = x,
 ```{r}
 # Eval ensemble performance on a test set
 performance = h2o.performance(ensemble, newdata = test.h2o)
-
 ```
 
 
@@ -461,6 +522,7 @@ performance = h2o.performance(ensemble, newdata = test.h2o)
 performance.gbm = h2o.performance(gbm, newdata = test.h2o)
 performance.rf = h2o.performance(rf, newdata = test.h2o)
 perfformance.lr = h2o.performance(lr, newdata = test.h2o)
+performance.ada = h2o.performance(ada, newdata=test.h2o)
 baselearner.best.auc = max(h2o.auc(performance.gbm), h2o.auc(performance.rf), h2o.auc(perfformance.lr))
 ensemble.auc = h2o.auc(performance)
 print(sprintf("Best Base learner Test AUC:  %s", baselearner.best.auc))
@@ -472,13 +534,26 @@ auc.test = as.data.frame(rbind(
   gbm.auc = h2o.auc(performance.gbm), 
   rf.auc = h2o.auc(performance.rf), 
   lr.auc = h2o.auc(perfformance.lr), 
-  emsemble.auc = ensemble.auc))
-auc.test
+  emsemble.auc = ensemble.auc
+  ))
 ```
 
 
+```{r}
+ensemble.pred=h2o.predict(ensemble, test.h2o)
+ensemble.pred = as.data.frame(ensemble.pred)
+test.new = as.data.frame(test.h2o)
+ensemble.confusion.table = table(ensemble.pred$predict, test.new$num)
+ensemble.confustion = sum(diag(ensemble.confusion.table))/sum(ensemble.confusion.table)
+ensemble.confustion
+```
 
 
+```{r}
+ensem.confusion = table(as.factor(gbm.pred.two), test$num)
+gbm.accuracy.two = sum(diag(gbm.confusion.two)) / sum(gbm.confusion.two)
+gbm.accuracy.two
+```
 
 
 

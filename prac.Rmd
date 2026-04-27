@@ -1,0 +1,176 @@
+---
+title: "prac"
+author: "Bo"
+date: "2026-04-27"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r}
+traindata = read.table(file = "7406train.csv", sep=",")
+```
+
+
+```{r}
+X1 = traindata[,1]
+X2 = traindata[,2]
+
+muhat = apply(traindata[,3:202], 1, mean)
+Vhat  = apply(traindata[,3:202], 1, var)
+```
+
+
+```{r}
+data0 = data.frame(X1 = X1, X2=X2, muhat = muhat, Vhat = Vhat)
+head(data0)
+dim(data0)
+```
+
+
+```{r}
+testdata  = read.table(file = "7406test.csv", sep=",");
+test.data = data.frame(testdata)
+head(testdata)
+View(data0)
+View(test.data)
+
+```
+
+
+```{r}
+names(test.data) <- c("X1", "X2")
+head(test.data)
+dim(test.data)
+```
+
+
+```{r cars}
+library(dplyr)
+```
+
+
+```{r pressure, echo=FALSE}
+# Polynomial Regression
+model.mu.poly = lm(muhat ~ poly(X1, 3) + poly(X2, 3) + X1:X2, data = data0)
+#model.mu.poly
+```
+
+
+```{r}
+pred.mu.poly = predict(model.mu.poly, newdata = test.data)
+length(pred.mu.poly)
+```
+
+
+```{r}
+#Generalized Additive Model (GAM): Good balance of flexibility + interpretability.
+
+library(mgcv)
+
+model.mu.gam = gam(muhat ~ s(X1) + s(X2) + ti(X1, X2), data = data0)
+#model.mu.gam
+```
+
+
+```{r}
+pred.mu.gam = predict(model.mu.gam, newdata = test.data)
+length(pred.mu.gam)
+```
+
+
+
+```{r}
+# Random Forest (very strong baseline)
+library(randomForest)
+
+model.mu.rf = randomForest(muhat ~ X1 + X2, data = data0)
+#model.mu.rf
+```
+
+
+```{r}
+pred.mu.rf = predict(model.mu.rf, newdata = test.data)
+length(pred.mu.rf)
+```
+
+
+```{r}
+# Gradient Boosting
+library(gbm)
+
+model.mu.gbm = gbm(
+  muhat ~ X1 + X2,
+  data = data0,
+  distribution = "gaussian",
+  n.trees = 500,
+  interaction.depth = 3
+)
+```
+
+
+```{r}
+pred.mu.gbm = predict(model.mu.gbm, newdata = test.data)
+length(pred.mu.gbm)
+```
+
+
+
+
+```{r}
+# Varance
+# Variance is positive and often skewed, so model log variance
+data0$log.var.hat = log(data0$Vhat)
+```
+
+
+```{r}
+model.var.gam = gam(log.var.hat ~ s(X1) + s(X2) + ti(X1, X2), data = data0)
+```
+
+
+```{r}
+model.var.rf = randomForest(log.var.hat ~ X1 + X2, data = data0)
+```
+
+
+```{r}
+
+```
+
+
+
+```{r}
+# Predict mean
+mu.pred = predict(model.mu.gam, newdata = testdata)
+length(mu.pred)
+# Predict log variance and convert back
+log.var.pred = predict(model.var.gam, newdata = testdata)
+var.pred = exp(log.var.pred)
+```
+
+
+```{r}
+library(caret)
+
+train_control = trainControl(method = "cv", number = 5)
+
+model.mu.cv = train(
+  muhat ~ X1 + X2,
+  data = data0,
+  method = "rf",
+  trControl = train_control
+)
+```
+
+
+
+```{r}
+
+```
+
+

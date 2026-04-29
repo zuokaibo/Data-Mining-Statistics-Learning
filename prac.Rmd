@@ -27,7 +27,6 @@ Vhat  = apply(traindata[,3:202], 1, var)
 
 ```{r}
 data0 = data.frame(X1 = X1, X2=X2, muhat = muhat, Vhat = Vhat)
-head(data0)
 dim(data0)
 ```
 
@@ -35,74 +34,72 @@ dim(data0)
 ```{r}
 testdata  = read.table(file = "7406test.csv", sep=",");
 test.data = data.frame(testdata)
-head(testdata)
-View(data0)
-View(test.data)
-
-```
-
-
-```{r}
-names(test.data) <- c("X1", "X2")
-head(test.data)
+names(test.data) = c("X1", "X2")
 dim(test.data)
 ```
 
 
 ```{r cars}
 library(dplyr)
+# Varance
+# Variance is positive and often skewed, so model log variance
+data0$log.var.hat = log(data0$Vhat)
 ```
 
 
 ```{r pressure, echo=FALSE}
-# Polynomial Regression
-model.mu.poly = lm(muhat ~ poly(X1, 3) + poly(X2, 3) + X1:X2, data = data0)
-#model.mu.poly
-```
+# Polynomial Regression: mean
+model.mu.poly = lm(muhat ~ poly(X1, 1, raw = TRUE) + poly(X2, 1, raw = TRUE) + X1:X2, data = data0)
+pred.mu.poly.train = predict(model.mu.poly, newdata = data0)
+mse.poly.mean.train = mean((muhat - pred.mu.poly.train)^2)
+mse.poly.mean.train
 
-
-```{r}
-pred.mu.poly = predict(model.mu.poly, newdata = test.data)
-length(pred.mu.poly)
+# Polynomial Regression: var
+model.var.poly = lm(log.var.hat ~ poly(X1, 3, raw = TRUE) + poly(X1, 3, raw = TRUE) + X1:X2, data = data0)
+log.var.poly.train = predict(model.var.poly, newdata = data0)
+var.poly.pred.train = exp(log.var.poly.train)
+mse.poly.var.train = mean((Vhat-var.poly.pred.train)^2)
+mse.poly.var.train
 ```
 
 
 ```{r}
 #Generalized Additive Model (GAM): Good balance of flexibility + interpretability.
-
 library(mgcv)
-
 model.mu.gam = gam(muhat ~ s(X1) + s(X2) + ti(X1, X2), data = data0)
-#model.mu.gam
+pred.mu.gam.train = predict(model.mu.gam, newdata = data0)
+mse.gam.mean.train = mean((muhat - pred.mu.gam.train)^2)
+mse.gam.mean.train
+
+# GAM: var
+model.var.gam = gam(log.var.hat ~ s(X1) + s(X2) + ti(X1, X2), data = data0)
+log.var.gam.train = predict(model.var.gam, newdata = data0)
+var.gam.pred.train = exp(log.var.gam.train)
+mse.gam.var.train = mean((Vhat-var.gam.pred.train)^2)
+mse.gam.var.train
 ```
 
 
 ```{r}
-pred.mu.gam = predict(model.mu.gam, newdata = test.data)
-length(pred.mu.gam)
-```
-
-
-
-```{r}
-# Random Forest (very strong baseline)
+# Random Forest (very strong baseline): mean
 library(randomForest)
-
 model.mu.rf = randomForest(muhat ~ X1 + X2, data = data0)
-#model.mu.rf
+pred.mu.rf.train = predict(model.mu.rf, newdata = data0)
+mse.rf.mean.train = mean((muhat - pred.mu.rf.train)^2)
+mse.rf.mean.train
+
+# Random forest: var
+model.var.rf = randomForest(log.var.hat ~ X1 + X2, data = data0)
+log.var.rf.train = predict(model.var.rf, newdata = data0)
+var.rf.pred.train = exp(log.var.rf.train)
+mse.rf.var.train = mean((Vhat-var.rf.pred.train)^2)
+mse.rf.var.train
 ```
 
 
 ```{r}
-pred.mu.rf = predict(model.mu.rf, newdata = test.data)
-length(pred.mu.rf)
-```
-
-
-```{r}
-# Gradient Boosting
+# Gradient Boosting: mean
 library(gbm)
-
 model.mu.gbm = gbm(
   muhat ~ X1 + X2,
   data = data0,
@@ -110,48 +107,81 @@ model.mu.gbm = gbm(
   n.trees = 500,
   interaction.depth = 3
 )
+pred.mu.gbm.train = predict(model.mu.gbm, newdata = data0)
+mse.gbm.mean.train = mean((muhat-pred.mu.gbm.train)^2)
+mse.gbm.mean.train
+
+# Gradient Boosting: Var
+model.var.gbm = gbm(
+  log.var.hat ~ X1 + X2,
+  data = data0,
+  distribution = "gaussian",
+  n.trees = 500,
+  interaction.depth = 3
+)
+log.var.gbm.train = predict(model.var.gbm, newdata = data0)
+var.gbm.pred.train = exp(log.var.gbm.train)
+mse.gbm.var.train = mean((Vhat-var.gbm.pred.train)^2)
+mse.gbm.var.train
 ```
 
 
 ```{r}
-pred.mu.gbm = predict(model.mu.gbm, newdata = test.data)
-length(pred.mu.gbm)
+# Prediction on testdata with four models
+
+# Polynomial regression: mean
+pred.mu.poly.test = predict(model.mu.poly, newdata = test.data)
+#length(pred.mu.poly.test)
+
+# Polynomial regression: var
+log.var.poly.test = predict(model.var.poly, newdata = test.data)
+var.poly.pred.test = exp(log.var.poly.test)
+#length(log.var.poly.test)
+
+
+
+
+
+# GAM:mean
+pred.mu.gam.test = predict(model.mu.gam, newdata = test.data)
+#length(pred.mu.gam.test)
+# GAM: var
+log.var.gam.test = predict(model.var.gam, newdata = test.data)
+var.gam.pred.test = exp(log.var.gam.test)
+#length(var.gam.pred.test)
+
+
+
+
+
+# Random forest: mean
+pred.mu.rf.test = predict(model.mu.rf, newdata = test.data)
+#length(pred.mu.rf.test)
+
+# Random forest: var
+log.var.rf.test = predict(model.var.rf, newdata = test.data)
+var.rf.pred.test = exp(log.var.rf.test)
+#length(var.rf.pred.test)
+
+
+
+
+
+# GBM: mean
+pred.mu.gbm.test = predict(model.mu.gbm, newdata = test.data)
+#length(pred.mu.gbm.test)
+
+# Gradient Boosting: Var
+log.var.gbm.test = predict(model.var.gbm, newdata = test.data)
+var.gbm.pred.test = exp(log.var.gbm.test)
+#length(var.gbm.pred.test)
 ```
 
 
 
 
-```{r}
-# Varance
-# Variance is positive and often skewed, so model log variance
-data0$log.var.hat = log(data0$Vhat)
-```
 
 
-```{r}
-model.var.gam = gam(log.var.hat ~ s(X1) + s(X2) + ti(X1, X2), data = data0)
-```
-
-
-```{r}
-model.var.rf = randomForest(log.var.hat ~ X1 + X2, data = data0)
-```
-
-
-```{r}
-
-```
-
-
-
-```{r}
-# Predict mean
-mu.pred = predict(model.mu.gam, newdata = testdata)
-length(mu.pred)
-# Predict log variance and convert back
-log.var.pred = predict(model.var.gam, newdata = testdata)
-var.pred = exp(log.var.pred)
-```
 
 
 ```{r}

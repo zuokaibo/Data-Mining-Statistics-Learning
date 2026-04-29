@@ -198,6 +198,9 @@ write.table(testdata, file="1.Zuo.Kaibo.csv",
 summary(testdata)
 ```
 
+```{r}
+# did not copy autograder code here. 
+```
 
 
 

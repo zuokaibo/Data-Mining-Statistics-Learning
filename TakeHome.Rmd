@@ -2,7 +2,10 @@
 title: "prac"
 author: "Bo"
 date: "2026-04-27"
-output: pdf_document
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
 ---
 
 ```{r setup, include=FALSE}
@@ -32,6 +35,12 @@ dim(data0)
 
 
 ```{r}
+hist(data0$Vhat, main="Variance", xlab="Variance")
+```
+
+
+
+```{r}
 testdata  = read.table(file = "7406test.csv", sep=",");
 test.data = data.frame(testdata)
 names(test.data) = c("X1", "X2")
@@ -47,7 +56,7 @@ data0$log.var.hat = log(data0$Vhat)
 ```
 
 
-```{r pressure, echo=FALSE}
+```{r}
 # Polynomial Regression: mean
 model.mu.poly = lm(muhat ~ poly(X1, 1, raw = TRUE) + poly(X2, 1, raw = TRUE) + X1:X2, data = data0)
 pred.mu.poly.train = predict(model.mu.poly, newdata = data0)
@@ -83,13 +92,13 @@ mse.gam.var.train
 ```{r}
 # Random Forest (very strong baseline): mean
 library(randomForest)
-model.mu.rf = randomForest(muhat ~ X1 + X2, data = data0)
+model.mu.rf = randomForest(muhat ~ X1 + X2, ntree=500, nodesize=2, data = data0)
 pred.mu.rf.train = predict(model.mu.rf, newdata = data0)
 mse.rf.mean.train = mean((muhat - pred.mu.rf.train)^2)
 mse.rf.mean.train
 
 # Random forest: var
-model.var.rf = randomForest(log.var.hat ~ X1 + X2, data = data0)
+model.var.rf = randomForest(log.var.hat ~ X1 + X2, ntree=500, nodesize=2, data = data0)
 log.var.rf.train = predict(model.var.rf, newdata = data0)
 var.rf.pred.train = exp(log.var.rf.train)
 mse.rf.var.train = mean((Vhat-var.rf.pred.train)^2)
@@ -98,6 +107,8 @@ mse.rf.var.train
 
 
 ```{r}
+# interaction depth is set up to 3, then each tree could have a maximum of 3 splits. Because each split in the gbm package typically results in two child nodes plus a node for missing values (NA), 3 splits result in a tree with exactly 4 terminal nodes, in addition, a default value of 3 is a robust starting point for many datasets in practice.  
+
 # Gradient Boosting: mean
 library(gbm)
 model.mu.gbm = gbm(
